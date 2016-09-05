@@ -3,7 +3,7 @@
 # [ General parameters ]
 
 # Output directory
-outdir = "/scratch/sharedCO/Casiraghi/N250_insilico/bgprob_0001_rfac_75"
+outdir = "/scratch/sharedCO/Casiraghi/N250_insilico/bgprob_0001_rfac_100"
 
 # abemus main directory [ git clone ]
 abemusdir = "/elaborazioni/sharedCO/Home_casiraghi/Prog/abemus/"
