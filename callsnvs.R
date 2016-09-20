@@ -2,7 +2,7 @@
 
 args <- commandArgs(trailingOnly = TRUE)
 if(length(args)!=1){
-  message("\nError!\nusage: Rscript afthreshold.R abemus_configure.R\n")
+  message("\nError!\nusage: Rscript callsnvs.R abemus_configure.R\n")
   quit()
 }
 source(args[1])
@@ -43,22 +43,22 @@ write.table(fpam,file = "filtering_criteria.tsv",col.names = T,row.names = F,sep
 
 #  check if data tables exists
 if(!is.numeric(AFbycov)){
-  if(file.exists(file.path(outdir,"Controls","datathreshold.RData"))){
-    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(outdir,"Controls","datathreshold.RData"),"[ ok ]"),"\n")
-    load(file = file.path(outdir,"Controls","datathreshold.RData"))
+  if(file.exists(file.path(controls_dir,"datathreshold.RData"))){
+    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold.RData"),"[ ok ]"),"\n")
+    load(file = file.path(controls_dir,"datathreshold.RData"))
   } else {
-    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(outdir,"Controls","datathreshold.RData"),"[ NOT found ]"),"\n")
+    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold.RData"),"[ NOT found ]"),"\n")
     quit()
   }
 }
 
 #  check if data tables exists
 if(!is.numeric(AFbycov)){
-  if(file.exists(file.path(outdir,"Controls","datathreshold_high_coverages.RData"))){
-    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(outdir,"Controls","datathreshold_high_coverages.RData"),"[ ok ]"),"\n")
-    load(file = file.path(outdir,"Controls","datathreshold_high_coverages.RData"))
+  if(file.exists(file.path(controls_dir,"datathreshold_high_coverages.RData"))){
+    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold_high_coverages.RData"),"[ ok ]"),"\n")
+    load(file = file.path(controls_dir,"datathreshold_high_coverages.RData"))
   } else {
-    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(outdir,"Controls","datathreshold_high_coverages.RData"),"[ NOT found ]"),"\n")
+    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold_high_coverages.RData"),"[ NOT found ]"),"\n")
     quit()
   }
 }
@@ -124,13 +124,15 @@ for(id in 1:nrow(TableSif)){
     }
     cat(paste("[",Sys.time(),"]\tn. of snvs in case after custom basic filters (F1 applied in germline) :",nrow(putsnvs)),"\n")
     fts[name.patient,"snvs_f1g"] <- nrow(putsnvs)
-    # Update table
-    pmF1 = rbind(pmF1,putsnvs)
     if(nrow(putsnvs) > 0){
       # F2) Filters on Variant Allelic Fraction [ in plasma/tumor ]
-      chrpmF2 = apply_AF_filters(chrpmF1=putsnvs,AFbycov=AFbycov,mybreaks=covbin_minpos,minaf_cov=minaf_cov_minpos,minaf=minaf)
+      filtafout = apply_AF_filters(chrpmF1=putsnvs,AFbycov=AFbycov,mybreaks=covbin_minpos,minaf_cov=minaf_cov_minpos,minaf=minaf)
+      chrpmF1 = filtafout[[1]]
+      chrpmF2 = filtafout[[2]]
       cat(paste("[",Sys.time(),"]\tn. of snvs in case after custom basic filters (F2 applied in case)   :",nrow(chrpmF2)),"\n")
       fts[name.patient,"snvs_f2"] <- nrow(chrpmF2)
+      # Update table
+      pmF1 <- rbind(pmF1,chrpmF1)
       pmF2 <- rbind(pmF2,chrpmF2)
     }
     ftabstats <- rbind(ftabstats,fts)
@@ -144,7 +146,7 @@ for(id in 1:nrow(TableSif)){
     pmF1$CaseID = name.plasma
     pmF1$GermlineID = name.germline
     pmF1 = pmF1[with(pmF1,order(chr,pos)),]
-    write.table(pmF1,file = paste0("pmtab_F1_",name.plasma,".tsv"),quote=F,sep="\t",col.names = T,row.names = F)
+    # write.table(pmF1,file = paste0("pmtab_F1_",name.plasma,".tsv"),quote=F,sep="\t",col.names = T,row.names = F)
     pmtableF1 = rbind(pmtableF1,pmF1)
   }
   if(nrow(pmF2)>0){
@@ -152,7 +154,7 @@ for(id in 1:nrow(TableSif)){
     pmF2$CaseID = name.plasma
     pmF2$GermlineID = name.germline
     pmF2 = pmF2[with(pmF2,order(chr,pos)),]
-    write.table(pmF2,file = paste0("pmtab_F2_",name.plasma,".tsv"),quote=F,sep="\t",col.names = T,row.names = F)
+    # write.table(pmF2,file = paste0("pmtab_F2_",name.plasma,".tsv"),quote=F,sep="\t",col.names = T,row.names = F)
     pmtableF2 = rbind(pmtableF2,pmF2)
   }
 }
@@ -161,28 +163,39 @@ cat(paste("\n[",Sys.time(),"]\tSorting output tables"),"\n")
 pmtableF1 = pmtableF1[with(pmtableF1,order(chr,pos,PatientID)),]
 pmtableF2 = pmtableF2[with(pmtableF2,order(chr,pos,PatientID)),]
 
-cat(paste("\n[",Sys.time(),"]\tAdd per-base error measure to retained positions"),"\n")
-tabpbem = fread(file.path(outdir, "BaseErrorModel","bperr.tsv"),stringsAsFactors = F,showProgress = F,header = F,colClasses = list(character=2))  
+cat(paste("\n[",Sys.time(),"]\tAdd per-base error measure"),"\n")
+tabpbem = data.frame(fread(file.path(outdir, "BaseErrorModel","bperr.tsv"),stringsAsFactors = F,showProgress = F,header = F,colClasses = list(character=2)),stringsAsFactors = F)  
 colnames(tabpbem) <- c("group","chr","pos","ref","dbsnp","gc","map","uniq","is_rndm","tot_coverage","total.A","total.C","total.G","total.T","in_n_samples","bperr","tot_reads_supporting_alt")
+
+pmtableF1$group <- paste(pmtableF1$chr,pmtableF1$pos,pmtableF1$ref,sep = ":")
 pmtableF2$group <- paste(pmtableF2$chr,pmtableF2$pos,pmtableF2$ref,sep = ":")
 
-pbem.mean = mean(tabpbem$bperr,na.rm = T)
-pbem.median = median(tabpbem$bperr,na.rm = T)
-pbem.stdv = sd(tabpbem$bperr,na.rm = T)
+pmtableF13 = merge(x = pmtableF1,y = tabpbem,by = c("group","chr","pos","ref","dbsnp"),all.x = T)
+pmtableF23 = merge(x = pmtableF2,y = tabpbem,by = c("group","chr","pos","ref","dbsnp"),all.x = T)
 
-pmtableF3 = merge(x = pmtableF2,y = tabpbem,by = c("group","chr","pos","ref","dbsnp"),all.x = T)
-pmtableF3$dist_dataset_bperr_median = pmtableF3$bperr-pbem.median
-pmtableF3$dist_dataset_bperr_mean = pmtableF3$bperr-pbem.mean
-pmtableF3$zscore = (pmtableF3$bperr-pbem.mean)/pbem.stdv
-
-pmtableF3 = pmtableF3[with(pmtableF3,order(chr,pos,PatientID)),]
+pmtableF13 = pmtableF13[with(pmtableF13,order(chr,pos,PatientID)),]
+pmtableF23 = pmtableF23[with(pmtableF23,order(chr,pos,PatientID)),]
 
 cat(paste("[",Sys.time(),"]\tWriting output tables"),"\n")
-write.table(pmtableF1,file = "pmtab_F1_AllSamples.tsv",quote=F,sep="\t",col.names = T,row.names = F)
-write.table(pmtableF2,file = "pmtab_F2_AllSamples.tsv",quote=F,sep="\t",col.names = T,row.names = F)
-write.table(pmtableF3,file = "pmtab_F3_AllSamples.tsv",quote=F,sep="\t",col.names = T,row.names = F)
+
+# By pairs [ table F1 + pbem ]
+for(sname in unique(pmtableF13$CaseID)){
+  tabout = pmtableF13[which(pmtableF13$CaseID==sname),]
+  write.table(x = tabout,file = paste0('pmtab_F1_pbem_',sname,'.tsv'),quote=F,sep="\t",col.names = T,row.names = F)
+}
+
+# By pairs [ table F2 + pbem ]
+for(sname in unique(pmtableF23$CaseID)){
+  tabout = pmtableF23[which(pmtableF23$CaseID==sname),]
+  write.table(x = tabout,file = paste0('pmtab_F2_pbem_',sname,'.tsv'),quote=F,sep="\t",col.names = T,row.names = F)
+}
+
+# All samples together
+write.table(pmtableF13,file = "pmtab_F1_pbem_AllSamples.tsv",quote=F,sep="\t",col.names = T,row.names = F)
+write.table(pmtableF23,file = "pmtab_F2_pbem_AllSamples.tsv",quote=F,sep="\t",col.names = T,row.names = F)
 write.table(ftabstats,file = "ftabstats.txt",quote=F,sep="\t",col.names = T,row.names = F)
 
+if(F){
 cat(paste("[",Sys.time(),"]\tConverting output tables into VCF format"),"\n")
 # pmtable 1
 pmtableF1.vcf = as.data.frame(cbind(pmtableF1$chr,pmtableF1$pos,".",pmtableF1$ref,pmtableF1$alt,".",".","."),stringsAsFactors = F)
@@ -204,6 +217,7 @@ cat(paste("[",Sys.time(),"]\tWriting VCF output tables"),"\n")
 write.table(pmtableF1.vcf,file = "pmtab_F1_AllSamples.vcf",quote=F,sep="\t",col.names = T,row.names = F)
 write.table(pmtableF2.vcf,file = "pmtab_F2_AllSamples.vcf",quote=F,sep="\t",col.names = T,row.names = F)
 write.table(pmtableF2.vcf,file = "pmtab_F3_AllSamples.vcf",quote=F,sep="\t",col.names = T,row.names = F)
+}
 
 }
 

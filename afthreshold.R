@@ -17,9 +17,6 @@ if(!file.exists(file.path(outdir, "Controls"))){
 setwd(file.path(outdir, "Controls"))
 timestart <- proc.time()
 
-# import sample info file
-TableSif = read.delim(filesif,as.is=T)
-
 # get chromosomes
 chromosomes = read.delim(file = file.path(targetbp,"bpcovered.tsv"),as.is=T)
 chromosomes = sort(paste0("chr",chromosomes[-nrow(chromosomes),1]))
@@ -27,7 +24,7 @@ chromosomes = sort(paste0("chr",chromosomes[-nrow(chromosomes),1]))
 covbin = seq(0,5000,by = coverage_binning)
 covbin[length(covbin)] <- Inf
 lev = levels(cut(1,breaks=covbin,include.lowest=TRUE))
-probs = seq(0.95,1,0.001)
+probs = seq(0.99,1,0.0001)
 
 vafcov_file = file.path(outdir,"BaseErrorModel","afgtz.tsv")
 afz_file = file.path(outdir,"BaseErrorModel","afz.RData")

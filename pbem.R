@@ -55,7 +55,7 @@ for(chrom in chromosomes){
   targets = targets[with(targets,order(chr,pos)),]
   targets = as.data.frame(targets)
   cat(paste("[",Sys.time(),"]\tTotal positions to check in this chromosome :",nrow(targets)),"\n")
-  step = 20000
+  step = 5000
   mclapply(seq(1,nrow(targets),step),pos2bperr,targets=targets,germlineset=germlineset,step=step,chrom=chrom,lev=lev,covbin=covbin,mc.cores=mc.cores)
   cmda = paste("cat *_pbem.table.txt >",paste0("bperr_",chrom,".tsv"))
   system(cmda)
