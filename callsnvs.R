@@ -19,6 +19,7 @@ timestart <- proc.time()
 
 # Import sample info file
 TableSif = read.delim(filesif,as.is=T)
+TableSif = TableSif[seq(1,42,10),]
 # remove NAs and keep only case samples having matched germline samples
 nas = which(is.na(TableSif$plasma.bam) | is.na(TableSif$germline.bam))
 if(length(nas)>0){TableSif = TableSif[-nas,]}
@@ -99,7 +100,7 @@ for(id in 1:nrow(TableSif)){
     snvs = snvs[which(snvs$cov > mincov ),]
     snvs = snvs[which(snvs$cov.alt >= minalt ),]
     snvs = unique(snvs)
-    cat(paste("[",Sys.time(),"]\tn. of snvs in case after custom basic filters (F1 applied in case)   :",nrow(snvs)),"\n")
+    cat(paste("[",Sys.time(),"]\tn. of snvs in case after custom basic filters | F1 applied in case:\t",nrow(snvs)),"\n")
     fts[name.patient,"snvs_f1p"] <- nrow(snvs)
     if(nrow(snvs)==0){
       next
@@ -122,14 +123,14 @@ for(id in 1:nrow(TableSif)){
     } else {
       putsnvs <- common
     }
-    cat(paste("[",Sys.time(),"]\tn. of snvs in case after custom basic filters (F1 applied in germline) :",nrow(putsnvs)),"\n")
+    cat(paste("[",Sys.time(),"]\tn. of snvs in case after custom basic filters | F1 applied in ctrl:\t",nrow(putsnvs)),"\n")
     fts[name.patient,"snvs_f1g"] <- nrow(putsnvs)
     if(nrow(putsnvs) > 0){
       # F2) Filters on Variant Allelic Fraction [ in plasma/tumor ]
       filtafout = apply_AF_filters(chrpmF1=putsnvs,AFbycov=AFbycov,mybreaks=covbin_minpos,minaf_cov=minaf_cov_minpos,minaf=minaf)
       chrpmF1 = filtafout[[1]]
       chrpmF2 = filtafout[[2]]
-      cat(paste("[",Sys.time(),"]\tn. of snvs in case after custom basic filters (F2 applied in case)   :",nrow(chrpmF2)),"\n")
+      cat(paste("[",Sys.time(),"]\tn. of snvs in case after custom basic filters | F2 applied in case:\t",nrow(chrpmF2)),"\n")
       fts[name.patient,"snvs_f2"] <- nrow(chrpmF2)
       # Update table
       pmF1 <- rbind(pmF1,chrpmF1)
@@ -165,7 +166,7 @@ pmtableF2 = pmtableF2[with(pmtableF2,order(chr,pos,PatientID)),]
 
 cat(paste("\n[",Sys.time(),"]\tAdd per-base error measure"),"\n")
 tabpbem = data.frame(fread(file.path(outdir, "BaseErrorModel","bperr.tsv"),stringsAsFactors = F,showProgress = F,header = F,colClasses = list(character=2)),stringsAsFactors = F)  
-colnames(tabpbem) <- c("group","chr","pos","ref","dbsnp","gc","map","uniq","is_rndm","tot_coverage","total.A","total.C","total.G","total.T","in_n_samples","bperr","tot_reads_supporting_alt")
+colnames(tabpbem) <- c("group","chr","pos","ref","dbsnp","gc","map","uniq","is_rndm","tot_coverage","total.A","total.C","total.G","total.T","n_pos_available",'n_pos_af_lth','n_pos_af_gth','count.A_af_gth','count.C_af_gth','count.G_af_gth','count.T_af_gth',"bperr","tot_reads_supporting_alt")
 
 pmtableF1$group <- paste(pmtableF1$chr,pmtableF1$pos,pmtableF1$ref,sep = ":")
 pmtableF2$group <- paste(pmtableF2$chr,pmtableF2$pos,pmtableF2$ref,sep = ":")
