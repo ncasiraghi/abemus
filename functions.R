@@ -63,13 +63,13 @@ pos2bperr = function(id,targets,germlineset,step,chrom,lev,covbin){
   if(file.info(filtpileup)$size == 0){
     cat(paste("[",Sys.time(),"]\tpositions in ",outfile,"not found in any pileups."),"\n")
   } else {
-    completetab_all = fread(filtpileup,stringsAsFactors = F,showProgress = T,header = F,na.strings = "")
+    completetab_all = fread(filtpileup,stringsAsFactors = F,showProgress = T,header = F,na.strings = "",colClasses=list(character=10))
     names(completetab_all)=c("chr","pos","ref","A","C","G","T","af","RD","dbsnp")
     # exclude annotated and private SNPs [ to compute AF threshold]
     completetab = completetab_all[which(is.na(completetab_all$dbsnp)),,drop=F]
     completetab = completetab[which(completetab$af <= 0.2 & completetab$RD > 0),,drop=F]
     # exlude only private SNPs [ to compute pbem also in positions that are annotated SNPs ]
-    completetab_dbsnp = completetab_all[which(completetab_all$af <= 0.2 & completetab_all$RD > 0),,drop=F]
+    completetab_dbsnp = completetab_all[which(completetab_all$af <= 1.0 & completetab_all$RD > 0),,drop=F]
     if(nrow(completetab)>0){
       # save allelic fractions by bins of coverage
       mytabaf = completetab[which(completetab$af > 0),,drop=F]
@@ -80,7 +80,18 @@ pos2bperr = function(id,targets,germlineset,step,chrom,lev,covbin){
       # compute pbem
       completetab_dbsnp$group = paste(completetab_dbsnp$chr,completetab_dbsnp$pos,completetab_dbsnp$ref,sep=":")
       dat <- data.table(completetab_dbsnp, key="group")
-      ans <- dat[,{list(tot_coverage=sum(RD,na.rm = T),total.A=sum(A,na.rm = T),total.C=sum(C,na.rm = T),total.G=sum(G,na.rm = T),total.T=sum(T,na.rm = T),in_n_samples=length(which(!is.na(RD) & RD>0)))},by="group"]
+      ans <- dat[,{list(tot_coverage=sum(RD,na.rm = T),
+                        total.A=sum(A,na.rm = T),
+                        total.C=sum(C,na.rm = T),
+                        total.G=sum(G,na.rm = T),
+                        total.T=sum(T,na.rm = T),
+                        n_pos_available = length(which(RD > 0)),
+                        n_pos_af_lth=length(which(af < 0.15)),
+                        n_pos_af_gth=length(which(af >= 0.15)),
+                        count.A_af_gth=length(A[which(af >= 0.15 & A>0)]),
+                        count.C_af_gth=length(C[which(af >= 0.15 & C>0)]),
+                        count.G_af_gth=length(G[which(af >= 0.15 & G>0)]),
+                        count.T_af_gth=length(T[which(af >= 0.15 & T>0)]))},by="group"]
       this = as.data.table(this)
       this$group = paste(this$chr,this$pos,this$ref,sep=":")
       this_ans = merge(x = this,y = ans,by = "group",all.y = T)

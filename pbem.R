@@ -82,7 +82,7 @@ save(afz,file = "afz.RData",compress = T)
 cmd.merge = paste("cat bperr_chr*.tsv > bperr.tsv") 
 system(cmd.merge)
 
-bperr = fread(file.path(outdir, "BaseErrorModel","bperr.tsv"),stringsAsFactors = F,showProgress = F,header = F,colClasses = list(character=2))  
+bperr = fread(file.path(outdir, "BaseErrorModel","bperr.tsv"),stringsAsFactors = F,showProgress = F,header = F,colClasses = list(character=2,character=5))  
 bperr_summary = data.frame(as.numeric(summary(bperr$V16)))
 bperr_summary = rbind(bperr_summary,sd(x = bperr$V16,na.rm = T))
 rownames(bperr_summary) = c("Min.","1st Qu.","Median","Mean","3rd Qu.","Max.","std")
