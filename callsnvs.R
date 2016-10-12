@@ -19,7 +19,7 @@ timestart <- proc.time()
 
 # Import sample info file
 TableSif = read.delim(filesif,as.is=T)
-TableSif = TableSif[seq(1,42,10),]
+
 # remove NAs and keep only case samples having matched germline samples
 nas = which(is.na(TableSif$plasma.bam) | is.na(TableSif$germline.bam))
 if(length(nas)>0){TableSif = TableSif[-nas,]}
@@ -165,7 +165,7 @@ pmtableF1 = pmtableF1[with(pmtableF1,order(chr,pos,PatientID)),]
 pmtableF2 = pmtableF2[with(pmtableF2,order(chr,pos,PatientID)),]
 
 cat(paste("\n[",Sys.time(),"]\tAdd per-base error measure"),"\n")
-tabpbem = data.frame(fread(file.path(outdir, "BaseErrorModel","bperr.tsv"),stringsAsFactors = F,showProgress = F,header = F,colClasses = list(character=2)),stringsAsFactors = F)  
+tabpbem = data.frame(fread(file.path(pbem_dir,"bperr.tsv"),stringsAsFactors = F,showProgress = F,header = F,colClasses = list(character=2,character=5)),stringsAsFactors = F)  
 colnames(tabpbem) <- c("group","chr","pos","ref","dbsnp","gc","map","uniq","is_rndm","tot_coverage","total.A","total.C","total.G","total.T","n_pos_available",'n_pos_af_lth','n_pos_af_gth','count.A_af_gth','count.C_af_gth','count.G_af_gth','count.T_af_gth',"bperr","tot_reads_supporting_alt")
 
 pmtableF1$group <- paste(pmtableF1$chr,pmtableF1$pos,pmtableF1$ref,sep = ":")
@@ -174,26 +174,31 @@ pmtableF2$group <- paste(pmtableF2$chr,pmtableF2$pos,pmtableF2$ref,sep = ":")
 pmtableF13 = merge(x = pmtableF1,y = tabpbem,by = c("group","chr","pos","ref","dbsnp"),all.x = T)
 pmtableF23 = merge(x = pmtableF2,y = tabpbem,by = c("group","chr","pos","ref","dbsnp"),all.x = T)
 
-pmtableF13 = pmtableF13[with(pmtableF13,order(chr,pos,PatientID)),]
-pmtableF23 = pmtableF23[with(pmtableF23,order(chr,pos,PatientID)),]
+pmtableF13_final = pmtableF13[with(pmtableF13,order(chr,pos,PatientID)),]
+pmtableF23_final = pmtableF23[with(pmtableF23,order(chr,pos,PatientID)),]
 
 cat(paste("[",Sys.time(),"]\tWriting output tables"),"\n")
 
 # By pairs [ table F1 + pbem ]
-for(sname in unique(pmtableF13$CaseID)){
-  tabout = pmtableF13[which(pmtableF13$CaseID==sname),]
+for(sname in unique(pmtableF13_final$CaseID)){
+  tabout_temp = pmtableF13_final[which(pmtableF13_final$CaseID==sname),]
+  
+  tabout_temp = tabout_temp[which(tabout_temp$alt!='N'),]
+  out = mclapply(seq(1,nrow(tabout_temp),1),compute_pbem_allele,abemus=tabout_temp,mc.cores = mc.cores)
+  tabout = fromListToDF(out)
+  
   write.table(x = tabout,file = paste0('pmtab_F1_pbem_',sname,'.tsv'),quote=F,sep="\t",col.names = T,row.names = F)
 }
 
 # By pairs [ table F2 + pbem ]
-for(sname in unique(pmtableF23$CaseID)){
-  tabout = pmtableF23[which(pmtableF23$CaseID==sname),]
+for(sname in unique(pmtableF23_final$CaseID)){
+  tabout = pmtableF23_final[which(pmtableF23_final$CaseID==sname),]
   write.table(x = tabout,file = paste0('pmtab_F2_pbem_',sname,'.tsv'),quote=F,sep="\t",col.names = T,row.names = F)
 }
 
 # All samples together
-write.table(pmtableF13,file = "pmtab_F1_pbem_AllSamples.tsv",quote=F,sep="\t",col.names = T,row.names = F)
-write.table(pmtableF23,file = "pmtab_F2_pbem_AllSamples.tsv",quote=F,sep="\t",col.names = T,row.names = F)
+write.table(pmtableF13_final,file = "pmtab_F1_pbem_AllSamples.tsv",quote=F,sep="\t",col.names = T,row.names = F)
+write.table(pmtableF23_final,file = "pmtab_F2_pbem_AllSamples.tsv",quote=F,sep="\t",col.names = T,row.names = F)
 write.table(ftabstats,file = "ftabstats.txt",quote=F,sep="\t",col.names = T,row.names = F)
 
 if(F){
@@ -217,7 +222,7 @@ pmtableF3.vcf = unique(pmtableF3.vcf)
 cat(paste("[",Sys.time(),"]\tWriting VCF output tables"),"\n")
 write.table(pmtableF1.vcf,file = "pmtab_F1_AllSamples.vcf",quote=F,sep="\t",col.names = T,row.names = F)
 write.table(pmtableF2.vcf,file = "pmtab_F2_AllSamples.vcf",quote=F,sep="\t",col.names = T,row.names = F)
-write.table(pmtableF2.vcf,file = "pmtab_F3_AllSamples.vcf",quote=F,sep="\t",col.names = T,row.names = F)
+write.table(pmtableF3.vcf,file = "pmtab_F3_AllSamples.vcf",quote=F,sep="\t",col.names = T,row.names = F)
 }
 
 }

@@ -67,8 +67,8 @@ pos2bperr = function(id,targets,germlineset,step,chrom,lev,covbin){
     names(completetab_all)=c("chr","pos","ref","A","C","G","T","af","RD","dbsnp")
     # exclude annotated and private SNPs [ to compute AF threshold]
     completetab = completetab_all[which(is.na(completetab_all$dbsnp)),,drop=F]
-    completetab = completetab[which(completetab$af <= 0.2 & completetab$RD > 0),,drop=F]
-    # exlude only private SNPs [ to compute pbem also in positions that are annotated SNPs ]
+    completetab = completetab[which(completetab$af <= 0.1 & completetab$RD > 0),,drop=F]
+    # Compute pbem also in positions that are SNPs
     completetab_dbsnp = completetab_all[which(completetab_all$af <= 1.0 & completetab_all$RD > 0),,drop=F]
     if(nrow(completetab)>0){
       # save allelic fractions by bins of coverage
@@ -209,4 +209,52 @@ apply_AF_filters <- function(chrpmF1,AFbycov,minaf_cov,minaf,mybreaks){
     chrpmF2 = chrpmF2[,-which(names(chrpmF2)=="pass")]
   }
   return(list(chrpmF1,chrpmF2))  
+}
+
+compute_proptest <- function(id,dataf){
+  locus=dataf[id,,drop=F]
+  if(locus$bperr>0){
+    locus$proptest = prop.test(x = c(locus$cov.alt,locus$tot_reads_supporting_alt),n = c(locus$cov_case,locus$tot_coverage))$p.value
+  }
+  return(locus)
+}
+
+compute_pbem_allele <- function(id,abemus){
+  locus = abemus[id,,drop=F]
+  locus$pbem_allele = locus[,paste0('total.',locus$alt)]/locus$tot_coverage
+  # check if same alt allele is observed in case and germline (when af germline > 0)
+  alt_case = as.numeric(locus[,paste0(locus$alt,'_case')])
+  alt_ctrl = as.numeric(locus[,paste0(locus$alt,'_control')])
+  if(alt_ctrl>0){
+    locus$same_allele = 1
+  } else {
+    locus$same_allele = 0
+  }
+  return(locus)
+}
+
+getAltCountCovBased = function(id,target){
+  locus = target[id,]
+  out = locus[,c('total.A','total.C','total.G','total.T')]
+  out[,paste0('total.',locus$ref)] = 0
+  names(out) = c('cov.total.A','cov.total.C','cov.total.G','cov.total.T')
+  out.count <- out
+  out.count[which(out.count>0)] = 1
+  names(out.count) = c('n.total.A','n.total.C','n.total.G','n.total.T')
+  locusout = cbind(out,out.count)
+  return(locusout)
+}
+
+getTransTrasvCount = function(id,target){
+  locus = target[id,]
+  ref = locus$ref
+  out = locus[,c('total.A','total.C','total.G','total.T')]
+  out[,paste0('total.',locus$ref)] = 0
+  alts=gsub(names(out[,which(out>0)]),pattern = 'total.',replacement = '')
+  if(length(alts)>0){
+    out = paste(ref,alts,sep = '>')
+    return(out)
+  } else {
+    return(NA)
+  }
 }

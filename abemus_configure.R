@@ -3,25 +3,30 @@
 # [ General parameters ]
 
 # Output directory
-outdir = "/scratch/sharedCO/Casiraghi/Abemus_data/Targen_insilico_data/N250/SampleSET_bgprob_0001_rfac_125/set_B/Abemus"
+outdir = "/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/"
 
 # abemus main directory [ git clone ]
 abemusdir = "/elaborazioni/sharedCO/Home_casiraghi/Prog/abemus/"
 
 # Sample info file 
-# filesif = "/elaborazioni/sharedCO/Abemus_data_analysis/Samples_info_files/N250_insilico_germline_samples_info_file.tsv"
-filesif = "/scratch/sharedCO/Casiraghi/Abemus_data/Targen_insilico_data/N250/SampleSET_bgprob_0001_rfac_125/set_B/Abemus/N250_insilico_samples_info_file.tsv"
+filesif = "/elaborazioni/sharedCO/Abemus_data_analysis/Samples_info_files/N250_PMI_samples_only_prad_info_file.tsv"
 
 # bases in target regions [ previously obtained by using Rcript utility/PrepareTargetRegions.R ]
-targetbp = "/scratch/sharedCO/Casiraghi/Abemus_data/Targen_insilico_data/N250/SampleSET_bgprob_0001_rfac_125/set_B/Abemus/TargetPositions"
+targetbp = "/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/TargetPositions"
 
 # PacBam folder
-pacbamfolder = "/scratch/sharedCO/Casiraghi/Abemus_data/Targen_insilico_data/N250/SampleSET_bgprob_0001_rfac_125/set_B/Pacbam_byChromosome"
-# pacbamfolder = "/CIBIO/sharedCO/PaCBAM/N250/data_N250_insilico_bgprob_0001_rfac_125_byChromosome"
+pacbamfolder = "/CIBIO/sharedCO/PaCBAM/N250/data_N250_strands_mod4_byChromosome/"
 
 # Controls folder
 
-controls_dir = 
+# controls_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/Controls_9950/'
+# controls_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/Controls_9990/'
+# controls_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/Controls_9999/'
+controls_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/Controls_9990_10/'
+
+# Base Error Model folder
+
+pbem_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/BaseErrorModel_covbin10/'
 
 
 # Number of threads
@@ -37,7 +42,7 @@ aws = c(3)
 # [ 1. Computatation of per-base error model ]
 
 # Bins of coverage into which divide allelic fractions
-coverage_binning = 50
+coverage_binning = 10
 
 # [ 2. Estimation of allelic fraction thresold exploiting germline samples only ]
 
@@ -53,7 +58,7 @@ coverage_binning = 50
 AFbycov = TRUE
 
 # Desired specificity to set AF threshold
-spec = 0.9999
+spec = 0.9990
 
 # Minimum locus coverage in plasma/tumor sample
 mincov = 1

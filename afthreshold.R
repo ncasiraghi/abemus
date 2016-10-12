@@ -26,18 +26,18 @@ covbin[length(covbin)] <- Inf
 lev = levels(cut(1,breaks=covbin,include.lowest=TRUE))
 probs = seq(0.99,1,0.0001)
 
-vafcov_file = file.path(outdir,"BaseErrorModel","afgtz.tsv")
-afz_file = file.path(outdir,"BaseErrorModel","afz.RData")
+vafcov_file = file.path(pbem_dir,"afgtz.tsv")
+afz_file = file.path(pbem_dir,"afz.RData")
 
 #  check if data tables exists
-if(file.exists(file.path(outdir,"BaseErrorModel","afgtz.tsv"))){
+if(file.exists(file.path(pbem_dir,"afgtz.tsv"))){
   cat(paste("[",Sys.time(),"]\tlooking for data table with AFs > 0 and coverages:",vafcov_file,"[ ok ]"),"\n")  
 } else {
   cat(paste("[",Sys.time(),"]\tlooking for data table with AFs > 0 and coverages:",vafcov_file,"[ NOT found ]"),"\n") 
   quit()
 }
 
-if(file.exists(file.path(outdir,"BaseErrorModel","afz.tsv"))){
+if(file.exists(file.path(pbem_dir,"afz.tsv"))){
   cat(paste("[",Sys.time(),"]\tlooking for data table with AFs = 0 and coverages:",afz_file,"[ ok ]"),"\n")  
 } else {
   cat(paste("[",Sys.time(),"]\tlooking for data table with AFs = 0 and coverages:",afz_file,"[ NOT found ]"),"\n") 
