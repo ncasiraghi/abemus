@@ -53,16 +53,16 @@ if(!is.numeric(AFbycov)){
   }
 }
 
-#  check if data tables exists
-if(!is.numeric(AFbycov)){
-  if(file.exists(file.path(controls_dir,"datathreshold_high_coverages.RData"))){
-    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold_high_coverages.RData"),"[ ok ]"),"\n")
-    load(file = file.path(controls_dir,"datathreshold_high_coverages.RData"))
-  } else {
-    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold_high_coverages.RData"),"[ NOT found ]"),"\n")
-    quit()
-  }
-}
+# #  check if data tables exists
+# if(!is.numeric(AFbycov)){
+#   if(file.exists(file.path(controls_dir,"datathreshold_high_coverages.RData"))){
+#     cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold_high_coverages.RData"),"[ ok ]"),"\n")
+#     load(file = file.path(controls_dir,"datathreshold_high_coverages.RData"))
+#   } else {
+#     cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold_high_coverages.RData"),"[ NOT found ]"),"\n")
+#     quit()
+#   }
+# }
 
 
 pmtableF1 = data.frame(stringsAsFactors = F,check.names = F)
@@ -127,7 +127,7 @@ for(id in 1:nrow(TableSif)){
     fts[name.patient,"snvs_f1g"] <- nrow(putsnvs)
     if(nrow(putsnvs) > 0){
       # F2) Filters on Variant Allelic Fraction [ in plasma/tumor ]
-      filtafout = apply_AF_filters(chrpmF1=putsnvs,AFbycov=AFbycov,mybreaks=covbin_minpos,minaf_cov=minaf_cov_minpos,minaf=minaf)
+      filtafout = apply_AF_filters(chrpmF1=putsnvs,AFbycov=AFbycov,mybreaks=covbin,minaf_cov=minaf_cov,minaf=minaf)
       chrpmF1 = filtafout[[1]]
       chrpmF2 = filtafout[[2]]
       cat(paste("[",Sys.time(),"]\tn. of snvs in case after custom basic filters | F2 applied in case:\t",nrow(chrpmF2)),"\n")

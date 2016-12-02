@@ -34,8 +34,9 @@ system(cmd)
 
 message("# 3) Keep only SNVs with a single alternative allele")
 tmp.snv.single = gsub(basename(ALL),pattern = "\\.vcf",replacement = "_tmp_single.vcf")
-GetSingleALT = "/elaborazioni/home/nicola.casiraghi/Scripts/dbSNP_adjust/get_unique_alt.py"
-cmd = paste("less",tmp.snv,"|",GetSingleALT,">",tmp.snv.single)
+# GetSingleALT = "/home/nicola.casiraghi/Scripts/dbSNP_adjust/get_unique_alt.py"
+# cmd = paste("less",tmp.snv,"|",GetSingleALT,">",tmp.snv.single)
+cmd = paste("awk '$5 !~ /,/{print($0)}'",tmp.snv,">",tmp.snv.single)
 system(cmd)
 
 cmd = paste("cat",tmp.snv.single,">>",out2)
@@ -44,6 +45,7 @@ system(cmd)
 cmdrm = paste("rm",tmp.snv,tmp.snv.single)
 system(cmdrm)
 
+if(FALSE){
 message("# 4) Filtering CLINVAR")
 clinvar.snv = gsub(basename(CLINVAR),pattern = "\\.vcf",replacement = "_fCLNSIG.vcf")
 cmd = paste("head -n 500",CLINVAR,"| grep '^#' >",clinvar.snv)
@@ -58,7 +60,7 @@ cmd = paste("less",tmp.snv,"|",GetSingleALT,">",tmp.snv.single)
 system(cmd)
 
 tmp.snv.single.clnsig = gsub(basename(CLINVAR),pattern = "\\.vcf",replacement = "_tmp_single_clnsig.vcf")
-filterCLNSIG = "/elaborazioni/home/nicola.casiraghi/Scripts/dbSNP_adjust/filter_clinvar_by_CLNSIG.py"
+filterCLNSIG = "/home/nicola.casiraghi/Scripts/dbSNP_adjust/filter_clinvar_by_CLNSIG.py"
 cmd = paste("less",tmp.snv.single,"|",filterCLNSIG,">",tmp.snv.single.clnsig)
 system(cmd)
 
@@ -89,11 +91,12 @@ cmd = paste("bedtools intersect -a",out2,"-b",clinvar.somatic,"-wa -v -header >"
 system(cmd)
 
 message("# 7) Split dbSNPs by chromosome")
-vcf2chrom = "Rscript /elaborazioni/home/nicola.casiraghi/Scripts/dbSNP_adjust/VCFbyChromosome.R"
+vcf2chrom = "Rscript /home/nicola.casiraghi/Scripts/dbSNP_adjust/VCFbyChromosome.R"
 bychr = file.path(outfolder,"ByChromosome")
 dir.create(bychr)
 cmd = paste(vcf2chrom,nosomatic,bychr)
 system(cmd)
+}
 
 proc.time()-timestart
 

@@ -37,7 +37,7 @@ if(file.exists(file.path(pbem_dir,"afgtz.tsv"))){
   quit()
 }
 
-if(file.exists(file.path(pbem_dir,"afz.tsv"))){
+if(file.exists(file.path(pbem_dir,"afz.RData"))){
   cat(paste("[",Sys.time(),"]\tlooking for data table with AFs = 0 and coverages:",afz_file,"[ ok ]"),"\n")  
 } else {
   cat(paste("[",Sys.time(),"]\tlooking for data table with AFs = 0 and coverages:",afz_file,"[ NOT found ]"),"\n") 
@@ -75,7 +75,7 @@ for(l in lev){
   }
 }
 
-minaf_cov = th_results_bin[which(th_results_bin$specificity==spec),]
+minaf_cov = th_results_bin[which(round(th_results_bin$specificity,4)==spec),]
 
 cat(paste("[",Sys.time(),"]\tSaving threshold data\n"))
 save(minaf,minaf_cov,th_results,th_results_bin,covbin,lev,datacount_bin,file = file.path(outdir,"Controls",paste0("datathreshold.RData")),compress = T)
@@ -115,6 +115,7 @@ boxplot(at = x_coordinates,th_results_bin_matrix,pch=20,outcol="#636363",las=2,y
 dev.off()
   
 # Estimate AF threshold for not available coverage bins.
+if(FALSE){
 cat(paste("\n[",Sys.time(),"]\tEstimation of AF thresholds for high coverages\n"))  
 
 # find out most represented bin of coverage
@@ -249,6 +250,8 @@ minaf_cov_minpos = th_results_bin_minpos[which(th_results_bin_minpos$specificity
 covbin_minpos = covbin[1:length(minaf_cov_minpos[,-1])]
 covbin_minpos = c(covbin_minpos,Inf)
 save(min_npos,covbin_minpos,minaf_cov_minpos,th_results_bin_minpos,file = file.path(outdir,"Controls",paste0("datathreshold_high_coverages.RData")),compress = T)
+
+}
 
 proc.time()-timestart
 
