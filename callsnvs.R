@@ -153,7 +153,8 @@ filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out
   }
 }
 
-mc.cores = 5
+chrom.in.parallel = 5
+mc.cores = 10
 
 # iterate on tumor and matched control
 for(id in 1:nrow(TableSif)){
@@ -170,7 +171,7 @@ for(id in 1:nrow(TableSif)){
   germline.folder = list.files(pacbamfolder,pattern = name.germline,full.names = T)
   plasma.folder = list.files(pacbamfolder,pattern = name.plasma,full.names = T)
   # run in parallel on chromosomes
-  mclapply(seq(1,length(chromosomes),1),filter,chromosomes=chromosomes,patient_folder=patient_folder,plasma.folder=plasma.folder,germline.folder=germline.folder,out1=out1,out2=out2,mc.cores = mc.cores)
+  mclapply(seq(1,length(chromosomes),1),filter,chromosomes=chromosomes,patient_folder=patient_folder,plasma.folder=plasma.folder,germline.folder=germline.folder,out1=out1,out2=out2,mc.cores = chrom.in.parallel)
   # collapse all chromosome outs into a single table
   setwd(patient_folder)
   tabs_list = list.files(patient_folder,full.names = T,recursive = T,pattern = 'chrpm_f1.tsv') 
