@@ -69,6 +69,32 @@ add_class = function(pmtab){
   return(pmtab)
 }
 
+apply_AF_filters <- function(chrpmF1,AFbycov,minaf_cov,minaf,mybreaks,mc.cores){
+  if (AFbycov == FALSE){
+    chrpmF1[,'af_threshold'] <- minaf
+    #chrpmF2 = chrpmF1[which(chrpmF1$af_case >= minaf),,drop=F]
+  } else if (is.numeric(AFbycov)){
+    chrpmF1[,'af_threshold'] <- AFbycov
+    #chrpmF2 = chrpmF1[which(chrpmF1$af_case >= AFbycov),,drop=F]
+  } else if (AFbycov == TRUE){
+    thresholds = as.numeric(minaf_cov[,-1])
+    
+    af_filter_by_coverage <- function(y,thresholds,chrpmF1){
+      this = chrpmF1[y,,drop=F]
+      minaf_covth = thresholds[findInterval(this$cov_case,mybreaks)]
+      this[,'af_threshold'] <- minaf_covth
+      return(this)
+    }
+    
+    out = mclapply(seq(1,nrow(chrpmF1),1),af_filter_by_coverage,thresholds=thresholds,chrpmF1=chrpmF1,mc.cores = mc.cores)
+    chrpmF1 = fromListToDF(out)
+    #chrpmF2 = chrpmF1[which(chrpmF1$af_case >= chrpmF1$af_threshold),,drop=F]
+    
+  }
+  #return(list(chrpmF1,chrpmF2))
+  return(chrpmF1)
+}
+
 filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out1,out2){
   chrom = chromosomes[i]
   # create chromsome sub-folder
@@ -77,7 +103,7 @@ filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out
   setwd(chromdir)
   # import files
   plasma_snvs = list.files(file.path(plasma.folder,"snvs"),pattern = paste0("_",chrom,".snvs"),full.names = T)
-  snvs = fread(plasma_snvs,stringsAsFactors = F,showProgress = F,header = F,skip = 1,na.strings = "",colClasses = list(character=15))
+  snvs = fread(plasma_snvs,stringsAsFactors = F,showProgress = F,header = F,skip = 1,na.strings = "",colClasses = list(character=15),verbose = F)
   snvs = unique(snvs)
   snvs = data.frame(snvs)
   names(snvs)=c("chr","pos","ref","alt","A","C","G","T","af","cov","Ars","Crs","Grs","Trs","dbsnp")
@@ -118,31 +144,20 @@ filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out
     tabpbem_file = list.files(pbem_dir,pattern = paste0('bperr_',chrom,'.tsv'),full.names = T) 
     tabpbem = data.frame(fread(input = tabpbem_file,stringsAsFactors = F,showProgress = F,header = F,colClasses = list(character=2,character=5)),stringsAsFactors = F)
     colnames(tabpbem) <- c("group","chr","pos","ref","dbsnp","gc","map","uniq","is_rndm","tot_coverage","total.A","total.C","total.G","total.T","n_pos_available",'n_pos_af_lth','n_pos_af_gth','count.A_af_gth','count.C_af_gth','count.G_af_gth','count.T_af_gth',"bperr","tot_reads_supporting_alt")
-    # tab 1
-    filtafout = apply_AF_filters(chrpmF1=putsnvs,AFbycov=AFbycov,mybreaks=covbin,minaf_cov=minaf_cov,minaf=minaf)
-    chrpmF1 = filtafout[[1]]
+    # TABLE 1
+    chrpmF1 = apply_AF_filters(chrpmF1=putsnvs,AFbycov=AFbycov,mybreaks=covbin,minaf_cov=minaf_cov,minaf=minaf,mc.cores=mc.cores)
     chrpmF1$group <- paste(chrpmF1$chr,chrpmF1$pos,chrpmF1$ref,sep = ":")
     cpmf1 = merge(x = chrpmF1,y = tabpbem,by = c("group","chr","pos","ref","dbsnp"),all.x = T)
-    # tab 2
-    chrpmF2 = filtafout[[2]]
-    chrpmF2$group <- paste(chrpmF2$chr,chrpmF2$pos,chrpmF2$ref,sep = ":")
-    cpmf2 = merge(x = chrpmF2,y = tabpbem,by = c("group","chr","pos","ref","dbsnp"),all.x = T)
     # Add sample/patient IDs 
     cpmf1 = add_names(pm = cpmf1,name.patient = name.patient,name.plasma = name.plasma,name.germline = name.germline)
-    cpmf2 = add_names(pm = cpmf2,name.patient = name.patient,name.plasma = name.plasma,name.germline = name.germline)
     # compute pbem allele add CLASS 
-    # tab 1
     Nids = which(cpmf1$alt=='N')
     if(length(Nids)>0){cpmf1 = cpmf1[-Nids,]}
     out = mclapply(seq(1,nrow(cpmf1),1),compute_pbem_allele,abemus=cpmf1,mc.cores = mc.cores)
     cpmf1 = fromListToDF(out)
     cpmf1 = add_class(pmtab = cpmf1)
-    # tab 2 
-    Nids = which(cpmf2$alt=='N')
-    if(length(Nids)>0){cpmf2 = cpmf2[-Nids,]}
-    out = mclapply(seq(1,nrow(cpmf2),1),compute_pbem_allele,abemus=cpmf2,mc.cores = mc.cores)
-    cpmf2 = fromListToDF(out)
-    cpmf2 = add_class(pmtab = cpmf2)
+    # TABLE 2
+    cpmf2 = cpmf1[which(cpmf1$af_case >= cpmf1$af_threshold),,drop=F]
     # Return chromosome tables
     write.table(cpmf1,file = 'chrpm_f1.tsv',sep = '\t',col.names = F,row.names = F,quote = F)
     write.table(cpmf2,file = 'chrpm_f2.tsv',sep = '\t',col.names = F,row.names = F,quote = F)

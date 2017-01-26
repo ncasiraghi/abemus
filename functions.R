@@ -182,35 +182,6 @@ fromListToDF <- function(inputList){
   return(outDF)
 }
 
-apply_AF_filters <- function(chrpmF1,AFbycov,minaf_cov,minaf,mybreaks){
-  if (AFbycov == FALSE){
-    chrpmF1[,'af_threshold'] <- minaf
-    chrpmF2 = chrpmF1[which(chrpmF1$af_case >= minaf),]
-  } else if (is.numeric(AFbycov)){
-    chrpmF1[,'af_threshold'] <- AFbycov
-    chrpmF2 = chrpmF1[which(chrpmF1$af_case >= AFbycov),]
-  } else if (AFbycov == TRUE){
-    thresholds = as.numeric(minaf_cov[,-1])
-    pass = c()
-    for(i in 1:nrow(chrpmF1)){
-      minaf_covth = thresholds[findInterval(chrpmF1$cov_case[i],mybreaks)]
-      chrpmF1[i,'af_threshold'] <- minaf_covth
-      if(chrpmF1$af_case[i] >= minaf_covth){
-        pass = c(pass,1)
-      } else {
-        pass = c(pass,0)
-      }
-    }
-    chrpmF2 = cbind(chrpmF1,pass)
-    toremove = which(chrpmF2$pass==0)
-    if(length(toremove)>0){
-      chrpmF2 = chrpmF2[-toremove,,drop=F]
-    } 
-    chrpmF2 = chrpmF2[,-which(names(chrpmF2)=="pass")]
-  }
-  return(list(chrpmF1,chrpmF2))  
-}
-
 compute_proptest <- function(id,dataf){
   locus=dataf[id,,drop=F]
   if(locus$bperr>0){
