@@ -41,6 +41,9 @@ probs = seq(0.95,1,0.001)
 
 # Compute per-base error on targeted positions and save allelic fractions by bins of coverage
 
+# temp:
+bam.with.chr = F
+
 for(chrom in chromosomes){
   cat(paste("[",Sys.time(),"]\tchromosome:",chrom),"\n")
   germlineset = get_germlineset(TableSif)
@@ -54,6 +57,9 @@ for(chrom in chromosomes){
   targets = unique(targetsFILT)
   targets = targets[with(targets,order(chr,pos)),]
   targets = as.data.frame(targets)
+  if(bam.with.chr){
+    targets$chr = paste0('chr',targets$chr)
+  }
   cat(paste("[",Sys.time(),"]\tTotal positions to check in this chromosome :",nrow(targets)),"\n")
   step = 5000
   mclapply(seq(1,nrow(targets),step),pos2bperr,targets=targets,germlineset=germlineset,step=step,chrom=chrom,lev=lev,covbin=covbin,mc.cores=mc.cores)
