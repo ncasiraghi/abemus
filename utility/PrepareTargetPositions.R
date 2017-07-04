@@ -171,6 +171,7 @@ for(chrom in CHR){
   vcf <- fromListToDF(mclapply(seq(1,nrow(chrombed),1),getpos,bed=chrombed,fasta=fasta,mc.cores = Ncores))
   vcf <- unique(as.data.table(vcf))
   chromdbsnp$chr = as.character(chromdbsnp$chr)
+  vcf$chr = as.character(vcf$chr)
   TargetPositions = merge(x = vcf,y = chromdbsnp,by=c("chr","pos","ref"),all.x = T)
   TargetPositions = TargetPositions[,c("chr","pos","ref","dbsnp","gc","map","uniq"),with=FALSE]
   # merge rs IDs associated to the same locus
@@ -181,7 +182,7 @@ for(chrom in CHR){
     TargetPositions = TargetPositions[-dupsids,]
   }
   TargetPositions = TargetPositions[with(TargetPositions,order(pos)),]
-  totpos[chrom,"bp_covered"] <- nrow(TargetPositions)
+  totpos[as.character(chrom),"bp_covered"] <- nrow(TargetPositions)
   filename = paste0("TargetPositions_chr",gsub(chrom,pattern = "chr",replacement = ""),".RData")
   assign(x = "chromTargetPositions",TargetPositions)
   cat(paste("[",Sys.time(),"]\tSaving data for this chromosome","\n"))

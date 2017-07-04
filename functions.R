@@ -47,7 +47,7 @@ strandbias_perc = function(fwd.ref,fwd.alt,rev.ref,rev.alt){
   return(dperc)
 }
 
-pos2bperr = function(id,targets,germlineset,step,chrom,lev,covbin){
+pos2bperr = function(id,targets,germlineset,step,chrom,lev,covbin,af_max_to_compute_thresholds,coverage_min_to_compute_thresholds,af_max_to_compute_pbem,coverage_min_to_compute_pbem,n_pos_af_th){
   upto = id+step-1
   if(upto>nrow(targets)){upto <- nrow(targets)}
   this = targets[id:upto,,drop=F]
@@ -67,9 +67,9 @@ pos2bperr = function(id,targets,germlineset,step,chrom,lev,covbin){
     names(completetab_all)=c("chr","pos","ref","A","C","G","T","af","RD","dbsnp")
     # exclude annotated and private SNPs [ to compute AF threshold]
     completetab = completetab_all[which(is.na(completetab_all$dbsnp)),,drop=F]
-    completetab = completetab[which(completetab$af <= 0.1 & completetab$RD > 0),,drop=F]
+    completetab = completetab[which(completetab$af <= af_max_to_compute_thresholds & completetab$RD >= coverage_min_to_compute_thresholds),,drop=F]
     # Compute pbem also in positions that are SNPs
-    completetab_dbsnp = completetab_all[which(completetab_all$af <= 1.0 & completetab_all$RD > 0),,drop=F]
+    completetab_dbsnp = completetab_all[which(completetab_all$af <= af_max_to_compute_pbem & completetab_all$RD >= coverage_min_to_compute_pbem),,drop=F]
     if(nrow(completetab)>0){
       # save allelic fractions by bins of coverage
       mytabaf = completetab[which(completetab$af > 0),,drop=F]
@@ -86,12 +86,12 @@ pos2bperr = function(id,targets,germlineset,step,chrom,lev,covbin){
                         total.G=sum(G,na.rm = T),
                         total.T=sum(T,na.rm = T),
                         n_pos_available = length(which(RD > 0)),
-                        n_pos_af_lth=length(which(af < 0.15)),
-                        n_pos_af_gth=length(which(af >= 0.15)),
-                        count.A_af_gth=length(A[which(af >= 0.15 & A>0)]),
-                        count.C_af_gth=length(C[which(af >= 0.15 & C>0)]),
-                        count.G_af_gth=length(G[which(af >= 0.15 & G>0)]),
-                        count.T_af_gth=length(T[which(af >= 0.15 & T>0)]))},by="group"]
+                        n_pos_af_lth=length(which(af < n_pos_af_th)),
+                        n_pos_af_gth=length(which(af >= n_pos_af_th)),
+                        count.A_af_gth=length(A[which(af >= n_pos_af_th & A>0)]),
+                        count.C_af_gth=length(C[which(af >= n_pos_af_th & C>0)]),
+                        count.G_af_gth=length(G[which(af >= n_pos_af_th & G>0)]),
+                        count.T_af_gth=length(T[which(af >= n_pos_af_th & T>0)]))},by="group"]
       this = as.data.table(this)
       this$group = paste(this$chr,this$pos,this$ref,sep=":")
       this_ans = merge(x = this,y = ans,by = "group",all.y = T)

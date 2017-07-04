@@ -3,34 +3,28 @@
 # [ General parameters ]
 
 # Output directory
-outdir = "/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/"
+outdir = "/scratch/sharedCO/Casiraghi/Abemus_data/NimbleGen_SeqCapEZ_Exome_v3_Plasma_IPM/PLASMA_DEDUP/"
 
 # abemus main directory [ git clone ]
 abemusdir = "/elaborazioni/sharedCO/Home_casiraghi/Prog/abemus/"
 
 # Sample info file 
-filesif = "/elaborazioni/sharedCO/Abemus_data_analysis/Samples_info_files/N250_PMI_samples_only_prad_info_file.tsv"
+filesif = "/elaborazioni/sharedCO/Abemus_data_analysis/Samples_info_files/IPM_PLASMA/SelectionGermlinesPbem/samples_for_pbem.tsv"
 
 # bases in target regions [ previously obtained by using Rcript utility/PrepareTargetRegions.R ]
-targetbp = "/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/TargetPositions"
+targetbp = "/scratch/sharedCO/Casiraghi/Abemus_data/NimbleGen_SeqCapEZ_Exome_v3_Plasma_IPM/TargetPositions/"
 
 # PacBam folder
-pacbamfolder = "/CIBIO/sharedCO/PaCBAM/N250/data_N250_strands_mod4_byChromosome/"
+pacbamfolder = "/SPICE-NEW/Casiraghi/PaCBAM/Plasma_Project/DEDUP_mode4_strands/mbq20_mrq20_dedup_bychrom/"
 
 # Controls folder
-
-# controls_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/Controls_9950/'
-# controls_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/Controls_9990/'
-# controls_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/Controls_9999/'
-controls_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/Controls_9990_10/'
+controls_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/NimbleGen_SeqCapEZ_Exome_v3_Plasma_IPM/PLASMA_DEDUP/Controls/'
 
 # Base Error Model folder
-
-pbem_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/IPM_N250/BaseErrorModel_covbin10/'
-
+pbem_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/NimbleGen_SeqCapEZ_Exome_v3_Plasma_IPM/PLASMA_DEDUP/BaseErrorModel/'
 
 # Number of threads
-mc.cores = 30
+mc.cores = 40
 
 # abemus working steps
 # 1. Compute pbem in target positions exploiting germline samples only;
@@ -42,9 +36,24 @@ aws = c(3)
 # [ 1. Computatation of per-base error model ]
 
 # Bins of coverage into which divide allelic fractions
-coverage_binning = 10
+coverage_binning = 50
+
+# To compute pbem, consider only positions with AF <= af_max_to_compute_pbem  
+af_max_to_compute_pbem = 1.0
+
+# To compute pbem, consider only positions with coverage >= coverage_min_to_compute_pbem 
+coverage_min_to_compute_pbem = 10
+
+# When compute pbem, count in how many germline samples the position has an AF >= n_pos_af_th
+n_pos_af_th = 0.15
 
 # [ 2. Estimation of allelic fraction thresold exploiting germline samples only ]
+
+# To compute AF threshold, consider only positions with AF <= af_max_to_compute_thresholds  
+af_max_to_compute_thresholds = 0.1
+
+# To compute AF threshold, consider only positions with coverage >= coverage_min_to_compute_thresholds 
+coverage_min_to_compute_thresholds = 10
 
 # [ 3. Call SNVs in case samples ]
 
