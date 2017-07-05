@@ -62,7 +62,19 @@ for(chrom in chromosomes){
   }
   cat(paste("[",Sys.time(),"]\tTotal positions to check in this chromosome :",nrow(targets)),"\n")
   step = 5000
-  mclapply(seq(1,nrow(targets),step),pos2bperr,targets=targets,germlineset=germlineset,step=step,chrom=chrom,lev=lev,covbin=covbin,mc.cores=mc.cores)
+  mclapply(seq(1,nrow(targets),step),pos2bperr,
+           targets=targets,
+           germlineset=germlineset,
+           step=step,
+           chrom=chrom,
+           lev=lev,
+           covbin=covbin,
+           af_max_to_compute_thresholds=af_max_to_compute_thresholds,
+           coverage_min_to_compute_thresholds=coverage_min_to_compute_thresholds,
+           af_max_to_compute_pbem=af_max_to_compute_pbem,
+           coverage_min_to_compute_pbem=coverage_min_to_compute_pbem,
+           n_pos_af_th=n_pos_af_th,
+           mc.cores=mc.cores)
   cmda = paste("cat *_pbem.table.txt >",paste0("bperr_",chrom,".tsv"))
   system(cmda)
   system("rm *_pbem.table.txt")
