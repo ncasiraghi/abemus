@@ -103,14 +103,21 @@ system(cmd.merge)
 bperr = fread(file.path(outdir, "BaseErrorModel","bperr.tsv"),stringsAsFactors = F,showProgress = F,header = F,colClasses = list(character=2,character=5))  
 
 # summary stats for pbem across the target
-bperr_summary = data.frame(as.numeric(summary(bperr$V22)))
+bperr_summary = summary(bperr$V22)
+names = names(bperr_summary)
+bperr_summary = data.frame(as.numeric(bperr_summary))
 bperr_summary = rbind(bperr_summary,sd(x = bperr$V16,na.rm = T))
-rownames(bperr_summary) = c("Min.","1st Qu.","Median","Mean","3rd Qu.","Max.","std")
+rownames(bperr_summary) = c(names,"std")
 write.table(bperr_summary,file = file.path(outdir, "BaseErrorModel","bperr_summary.tsv"),row.names = T,col.names = F,quote = F,sep = "\t")  
+
+pbem.nas = which(is.na(bperr$V22))
+if(length(pbem.nas)>0){
+  warning("NOT ABLE TO COMPUTE PBEM IN ",length(pbem.nas)," POSITIONS.")
+}
 
 # compute background pbem
 bgpbem = (sum(as.numeric(bperr$V23)))/(sum(as.numeric(bperr$V10)))
-mean_pbem = mean(as.numeric(bperr$V22))
+mean_pbem = mean(as.numeric(bperr$V22),na.rm = T)
 tabstat = data.frame(background_pbem = bgpbem,
                      mean_pbem = mean_pbem,
                      stringsAsFactors = F)
