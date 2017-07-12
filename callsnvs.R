@@ -40,7 +40,10 @@ fpam = data.frame(AFbycov = as.character(AFbycov),
                   stringsAsFactors = F)
 write.table(fpam,file = "filtering_criteria.tsv",col.names = T,row.names = F,sep="\t",quote = F)
 
-#  check if data tables exists
+# Import background pbem
+tab_bg_pbem = read.delim(file = file.path(pbem_dir,"pbem_background.tsv"),as.is=T,header=T)
+
+# Check if data tables exists
 if(!is.numeric(AFbycov)){
   if(file.exists(file.path(controls_dir,"datathreshold.RData"))){
     cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold.RData"),"[ ok ]"),"\n")
@@ -59,15 +62,26 @@ add_names = function(pm,name.patient,name.plasma,name.germline){
   return(pm)
 }
 
-add_class = function(pmtab){
+# add_class = function(pmtab){
+#   pmtab$CLASS = NA
+#   pmtab$CLASS[which(pmtab$af_control==0 & pmtab$bperr==0 & pmtab$pbem_allele==0)] = 1
+#   pmtab$CLASS[which(pmtab$af_control==0 & pmtab$bperr>0 & pmtab$pbem_allele==0)] = 2
+#   pmtab$CLASS[which(pmtab$af_control==0 & pmtab$bperr>0 & pmtab$pbem_allele>0)] = 3
+#   pmtab$CLASS[which(pmtab$af_control>0 & pmtab$bperr>0 & pmtab$pbem_allele>=0 & pmtab$same_allele == 0)] = 4
+#   pmtab$CLASS[which(pmtab$af_control>0 & pmtab$bperr>0 & pmtab$pbem_allele>0 & pmtab$same_allele == 1)] = 5
+#   return(pmtab)
+# }
+
+add_class = function(pmtab,xbg){
   pmtab$CLASS = NA
-  pmtab$CLASS[which(pmtab$af_control==0 & pmtab$bperr==0 & pmtab$pbem_allele==0)] = 1
-  pmtab$CLASS[which(pmtab$af_control==0 & pmtab$bperr>0 & pmtab$pbem_allele==0)] = 2
-  pmtab$CLASS[which(pmtab$af_control==0 & pmtab$bperr>0 & pmtab$pbem_allele>0)] = 3
-  pmtab$CLASS[which(pmtab$af_control>0 & pmtab$bperr>0 & pmtab$pbem_allele>=0 & pmtab$same_allele == 0)] = 4
-  pmtab$CLASS[which(pmtab$af_control>0 & pmtab$bperr>0 & pmtab$pbem_allele>0 & pmtab$same_allele == 1)] = 5
+  pmtab$CLASS[which(pmtab$af_control<=xbg & pmtab$bperr<=xbg & pmtab$pbem_allele<=xbg)] = 1
+  pmtab$CLASS[which(pmtab$af_control<=xbg & pmtab$bperr>xbg & pmtab$pbem_allele<=xbg)] = 2
+  pmtab$CLASS[which(pmtab$af_control<=xbg & pmtab$bperr>xbg & pmtab$pbem_allele>xbg)] = 3
+  pmtab$CLASS[which(pmtab$af_control>xbg & pmtab$bperr>xbg & pmtab$pbem_allele>=xbg & pmtab$same_allele == 0)] = 4
+  pmtab$CLASS[which(pmtab$af_control>xbg & pmtab$bperr>xbg & pmtab$pbem_allele>xbg & pmtab$same_allele == 1)] = 5
   return(pmtab)
 }
+
 
 apply_AF_filters <- function(chrpmF1,AFbycov,minaf_cov,minaf,mybreaks,mc.cores){
   if (AFbycov == FALSE){
@@ -150,12 +164,14 @@ filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out
     cpmf1 = merge(x = chrpmF1,y = tabpbem,by = c("group","chr","pos","ref","dbsnp"),all.x = T)
     # Add sample/patient IDs 
     cpmf1 = add_names(pm = cpmf1,name.patient = name.patient,name.plasma = name.plasma,name.germline = name.germline)
-    # compute pbem allele add CLASS 
+    # compute pbem allele
     Nids = which(cpmf1$alt=='N')
     if(length(Nids)>0){cpmf1 = cpmf1[-Nids,]}
     out = mclapply(seq(1,nrow(cpmf1),1),compute_pbem_allele,abemus=cpmf1,mc.cores = mc.cores)
     cpmf1 = fromListToDF(out)
-    cpmf1 = add_class(pmtab = cpmf1)
+    # add CLASS
+    #cpmf1 = add_class(pmtab = cpmf1)
+    cpmf1 = add_class(pmtab = cpmf1,xbg = as.numeric(tab_bg_pbem$background_pbem))
     # TABLE 2
     cpmf2 = cpmf1[which(cpmf1$af_case >= cpmf1$af_threshold),,drop=F]
     # Return chromosome tables

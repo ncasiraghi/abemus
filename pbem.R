@@ -101,9 +101,19 @@ cmd.merge = paste("cat bperr_chr*.tsv > bperr.tsv")
 system(cmd.merge)
 
 bperr = fread(file.path(outdir, "BaseErrorModel","bperr.tsv"),stringsAsFactors = F,showProgress = F,header = F,colClasses = list(character=2,character=5))  
+
+# summary stats for pbem across the target
 bperr_summary = data.frame(as.numeric(summary(bperr$V22)))
 bperr_summary = rbind(bperr_summary,sd(x = bperr$V16,na.rm = T))
 rownames(bperr_summary) = c("Min.","1st Qu.","Median","Mean","3rd Qu.","Max.","std")
 write.table(bperr_summary,file = file.path(outdir, "BaseErrorModel","bperr_summary.tsv"),row.names = T,col.names = F,quote = F,sep = "\t")  
-  
+
+# compute background pbem
+bgpbem = (sum(as.numeric(bperr$V23)))/(sum(as.numeric(bperr$V10)))
+mean_pbem = mean(as.numeric(bperr$V22))
+tabstat = data.frame(background_pbem = bgpbem,
+                     mean_pbem = mean_pbem,
+                     stringsAsFactors = F)
+write.table(tabstat,file = file.path(outdir, "BaseErrorModel","pbem_background.tsv"),row.names = F,col.names = T,quote = F,sep = "\t")  
+
 proc.time()-timestart
