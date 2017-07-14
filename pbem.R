@@ -116,8 +116,9 @@ if(length(pbem.nas)>0){
 }
 
 # compute background pbem
-bgpbem = (sum(as.numeric(bperr$V23)))/(sum(as.numeric(bperr$V10)))
-mean_pbem = mean(as.numeric(bperr$V22),na.rm = T)
+bperr_subset = bperr[which(bperr$V17 == 0),]
+bgpbem = (sum(as.numeric(bperr_subset$V23)))/(sum(as.numeric(bperr_subset$V10)))
+mean_pbem = mean(as.numeric(bperr_subset$V22),na.rm = T)
 tabstat = data.frame(background_pbem = bgpbem,
                      mean_pbem = mean_pbem,
                      stringsAsFactors = F)
