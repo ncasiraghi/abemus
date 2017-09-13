@@ -52,16 +52,16 @@ for(sname in samplelist){
   dir.create(file.path(outdir,dirname,"pileup"))
   setwd(file.path(outdir,dirname,"pileup"))
   pileup_list = grep(pacbamlist,pattern = "\\.pileup$",value = T)
-  pileup_file = grep(pileup_list,pattern = dirname,value = T)
+  pileup_file = grep(pileup_list,pattern = paste(dirname,"pileup",sep="."),value = T)
   mclapply(seq(1,length(CHR),1),pileup_splitbychr,CHR=CHR,pileup_file=pileup_file,mc.cores=mc.cores)
   cat("[ OK ]\n")
   cat("Writing snvs output by chromosome \t")
   dir.create(file.path(outdir,dirname,"snvs"))
   setwd(file.path(outdir,dirname,"snvs"))
   snvs_list = grep(pacbamlist,pattern = "\\.snvs$",value = T)
-  snvs_file = grep(snvs_list,pattern = dirname,value = T)
+  snvs_file = grep(snvs_list,pattern = paste(dirname,"snvs",sep="."),value = T)
   mclapply(seq(1,length(CHR),1),snvs_splitbychr,CHR=CHR,snvs_file=snvs_file,mc.cores=mc.cores)
   cat("[ OK ]\n")
 }
-
+warnings()
 proc.time()-timestart
