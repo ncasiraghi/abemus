@@ -77,13 +77,17 @@ add_class = function(pmtab){
 }
 
 add_class_xbg = function(pmtab,xbg){
-  pmtab$CLASS.xbg = NA
-  pmtab$CLASS.xbg[which(pmtab$af_control<=xbg & pmtab$bperr<=xbg & pmtab$pbem_allele<=xbg)] = 1
-  pmtab$CLASS.xbg[which(pmtab$af_control<=xbg & pmtab$bperr>xbg & pmtab$pbem_allele<=xbg)] = 2
-  pmtab$CLASS.xbg[which(pmtab$af_control<=xbg & pmtab$bperr>xbg & pmtab$pbem_allele>xbg)] = 3
-  pmtab$CLASS.xbg[which(pmtab$af_control>xbg & pmtab$bperr>xbg & pmtab$pbem_allele>=xbg & pmtab$same_allele == 0)] = 4
-  pmtab$CLASS.xbg[which(pmtab$af_control>xbg & pmtab$bperr>xbg & pmtab$pbem_allele>xbg & pmtab$same_allele == 1)] = 5
-  return(pmtab)
+  if(nrow(pmtab)>0){
+    pmtab$CLASS.xbg = NA
+    pmtab$CLASS.xbg[which(pmtab$af_control<=xbg & pmtab$bperr<=xbg & pmtab$pbem_allele<=xbg)] = 1
+    pmtab$CLASS.xbg[which(pmtab$af_control<=xbg & pmtab$bperr>xbg & pmtab$pbem_allele<=xbg)] = 2
+    pmtab$CLASS.xbg[which(pmtab$af_control<=xbg & pmtab$bperr>xbg & pmtab$pbem_allele>xbg)] = 3
+    pmtab$CLASS.xbg[which(pmtab$af_control>xbg & pmtab$bperr>xbg & pmtab$pbem_allele>=xbg & pmtab$same_allele == 0)] = 4
+    pmtab$CLASS.xbg[which(pmtab$af_control>xbg & pmtab$bperr>xbg & pmtab$pbem_allele>xbg & pmtab$same_allele == 1)] = 5
+    return(pmtab)
+  } else {
+    return(pmtab)
+  }
 }
 
 apply_AF_filters <- function(chrpmF1,AFbycov,minaf_cov,minaf,mybreaks,mc.cores){
@@ -179,17 +183,16 @@ filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out
     cpmf1 = add_class(pmtab = cpmf1)
     # TABLE 2
     cpmf2 = cpmf1[which(cpmf1$af_case >= cpmf1$af_threshold),,drop=F]
-    
     # TABLE 3
     cpmf3 = add_class_xbg(pmtab = cpmf2,xbg = as.numeric(tab_bg_pbem$background_pbem))
     cpmf3$bperr[which(cpmf3$bperr > 0.2)] = 0.2
-    
-    to.keep = which(sapply(1:nrow(cpmf3), function(k) 
-              cpmf3$af_case[k]>=tab_cov_pbem[min(which(covs>=cpmf3$cov_case[k])),
-                                             min(which(afs>=cpmf3$bperr[k]))]))
-    
-    cpmf3$pass.filter.pbem_coverage = 0
-    cpmf3$pass.filter.pbem_coverage[to.keep] = 1
+    if(nrow(cpmf3)>0){
+      to.keep = which(sapply(1:nrow(cpmf3), function(k) 
+        cpmf3$af_case[k]>=tab_cov_pbem[min(which(covs>=cpmf3$cov_case[k])),
+                                       min(which(afs>=cpmf3$bperr[k]))]))
+      cpmf3$pass.filter.pbem_coverage = 0
+      cpmf3$pass.filter.pbem_coverage[to.keep] = 1
+    }
 
     # Return chromosome tables
     write.table(cpmf1,file = 'chrpm_f1.tsv',sep = '\t',col.names = F,row.names = F,quote = F)
