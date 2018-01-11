@@ -1,31 +1,30 @@
-[0] Prepare dbSNP by chromosome and remove SNPs listed in clinvar.
+ABEMUS
+Adaptive per Base Error Model for Ultra-deep Sequencing data
 
-/elaborazioni/sharedCO/ISMB_ECCB_2015/code/Main/utility/dbSNPPER.R
+• Data preparation
 
-[1a] Get full information from target regions.
+1. dbSNP
+2. PaCBAM pileup
+3. PaCBAM pileup data splitted by chromosome
 
-/elaborazioni/sharedCO/ISMB_ECCB_2015/code/Main/utility/PrepareTargetPositions_v2.R
+• Pre-processing
 
-[1b] Prepare PacBam pileup and snvs by chromosome
+1. Select BED file and prepare target positions
 
-/elaborazioni/sharedCO/ISMB_ECCB_2015/code/Main/utility/PaCBAM_by_chromosome.R
+• Processing and Analysis
 
-> Create folder in main working directory to store configure file (ConfigureFiles)
+1. pbem computation
+2. AF threshold estimations
+3. Call SNVs
+4. SNVs annotations
 
-[2] Consider the set of germline samples in order to compute allelic fraction threshold to apply in somatic calls.
 
-/elaborazioni/sharedCO/ISMB_ECCB_2015/code/Main/PM_controls.R
-/elaborazioni/sharedCO/ISMB_ECCB_2015/code/Main/PM_controls_configure.R
 
-[3a] Compute look-up table to define AF threshold to apply to call somatic PMs
-[3b] Select and annotate positions with AF >= AF cut-off estimated
+Scripts, Utilities, Data
 
-/elaborazioni/sharedCO/ISMB_ECCB_2015/code/Main/PM_analysis.R
 
-[4] Functional annotation of putative somatic point mutations
+todo:
 
-[5] Compute Base error model for retained postions and/or a list of known SNVs
-
-/elaborazioni/sharedCO/ISMB_ECCB_2015/code/Main/PM_bem.R
-/elaborazioni/sharedCO/ISMB_ECCB_2015/code/Main/PM_bem_configure.R
-
+[] create repository with stable version of VCF file to annotated bed targets
+[] create repository with bed targets for most used kits
+[] include functional annotation in step 4 (Oncotator, snpeff, Annovar)
