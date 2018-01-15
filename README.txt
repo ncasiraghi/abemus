@@ -25,6 +25,7 @@ Scripts, Utilities, Data
 
 todo:
 
+[] change the way the sample info file is read and information are used to create folder and subfloder during the process
 [] create repository with stable version of VCF file to annotated bed targets
 [] create repository with bed targets for most used kits
 [] include functional annotation in step 4 (Oncotator, snpeff, Annovar)

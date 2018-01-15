@@ -14,6 +14,8 @@ ALL = args[1]
 BED = args[2]
 outfolder = args[3]
 
+header = "/elaborazioni/sharedCO/Home_casiraghi/Prog/abemus/utility/dbSNP144_header.txt"
+
 setwd(outfolder)
 timestart <- proc.time()
 
@@ -42,7 +44,8 @@ setwd(bychromfolder)
 for(chr in chromosomes){
   message('chrom:\t',chr)
   outname = paste0('dbsnp_chr',chr,'.vcf')
-  cmd = paste('tabix',ALL,chr,'>',outname)
+  system(paste('cat',header,'>',outname))
+  cmd = paste('tabix',ALL,chr,'>>',outname)
   system(cmd)
   # Intersect chrom dbsnp and bed
   out1 = gsub(basename(outname),pattern = "\\.vcf",replacement = ".intersectbed.vcf")
