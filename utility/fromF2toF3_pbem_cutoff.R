@@ -1,19 +1,19 @@
 library(data.table)
 
 # Working directory
-wd = "/scratch/sharedCO/Casiraghi/Abemus_data/NimbleGen_SeqCapEZ_Exome_v3_Plasma_IPM/PLASMA_DEDUP/Results_new"
+wd = "/scratch/sharedCO/Casiraghi/Abemus_data/IPM_tissues_Haloplex/Results_new/"
 
 # k factor
-sk = 2
+#sk = 3
 
-pbem_dir = "/scratch/sharedCO/Casiraghi/Abemus_data/NimbleGen_SeqCapEZ_Exome_v3_Plasma_IPM/PLASMA_DEDUP/BaseErrorModel/"
+pbem_dir = "/scratch/sharedCO/Casiraghi/Abemus_data/IPM_tissues_Haloplex/BaseErrorModel/"
 # Import background pbem
 tab_bg_pbem = read.delim(file = file.path(pbem_dir,"pbem_background.tsv"),as.is=T,header=T)
 
 # Import matrix for coverages and pbem
 load("/elaborazioni/sharedCO/Home_casiraghi/Prog/abemus/data/PBEsim.RData")
 tab_cov_pbem = tab.list[[6]]
-tab_cov_pbem = tab_cov_pbem*sk
+#tab_cov_pbem = tab_cov_pbem*sk
 
 add_class_xbg = function(pmtab,xbg){
   pmtab$CLASS.xbg = NA
@@ -26,6 +26,7 @@ add_class_xbg = function(pmtab,xbg){
 }
 
 ld = list.dirs(path = wd,full.names = T,recursive = F)
+ld = grep(ld,pattern = "PM185",value = T)
 
 #pm=ld[1]
 for(pm in ld){
@@ -38,15 +39,19 @@ for(pm in ld){
   cpmf3 = add_class_xbg(pmtab = cpmf2,xbg = as.numeric(tab_bg_pbem$background_pbem))
   cpmf3$bperr[which(cpmf3$bperr > 0.2)] = 0.2
   
-  to.keep = which(sapply(1:nrow(cpmf3), function(k) 
-    cpmf3$af_case[k]>=tab_cov_pbem[min(which(covs>=cpmf3$cov_case[k])),
-                                   min(which(afs>=cpmf3$bperr[k]))]))
+  pbem_coverage_filter = sapply(1:nrow(cpmf3), function(k) tab_cov_pbem[min(which(covs>=cpmf3$cov_case[k])),min(which(afs>=cpmf3$bperr[k]))])
   
+  # to.keep = which(sapply(1:nrow(cpmf3), function(k) 
+  #   cpmf3$af_case[k]>=tab_cov_pbem[min(which(covs>=cpmf3$cov_case[k])),
+  #                                  min(which(afs>=cpmf3$bperr[k]))]))
+  cpmf3$filter.pbem_coverage <- pbem_coverage_filter
   cpmf3$pass.filter.pbem_coverage = 0
-  cpmf3$pass.filter.pbem_coverage[to.keep] = 1
+  cpmf3$pass.filter.pbem_coverage[which(cpmf3$af_case >= cpmf3$filter.pbem_coverage)] = 1
+  
+  cpmf3 = cpmf3[which(cpmf3$pass.filter.pbem_coverage == 1),]
   
   f3.name = gsub(basename(cpmf2.file),pattern = "_F2_",replacement = "_F3_")
-  f3.name = gsub(f3.name,pattern = "\\.tsv",replacement = paste0(".",sk,".tsv"))
+  #f3.name = gsub(f3.name,pattern = "\\.tsv",replacement = paste0(".",sk,".tsv"))
   write.table(cpmf3,file = f3.name,sep = '\t',col.names = T,row.names = F,quote = F)
   
 }

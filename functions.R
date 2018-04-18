@@ -229,3 +229,35 @@ getTransTrasvCount = function(id,target){
     return(NA)
   }
 }
+
+add_names = function(pm,name.patient,name.plasma,name.germline){
+  pm$PatientID = name.patient
+  pm$CaseID = name.plasma
+  pm$GermlineID = name.germline
+  pm = pm[with(pm,order(chr,pos)),]
+  return(pm)
+}
+
+add_class = function(pmtab){
+  pmtab$CLASS = NA
+  pmtab$CLASS[which(pmtab$af_control==0 & pmtab$bperr==0 & pmtab$pbem_allele==0)] = 1
+  pmtab$CLASS[which(pmtab$af_control==0 & pmtab$bperr>0 & pmtab$pbem_allele==0)] = 2
+  pmtab$CLASS[which(pmtab$af_control==0 & pmtab$bperr>0 & pmtab$pbem_allele>0)] = 3
+  pmtab$CLASS[which(pmtab$af_control>0 & pmtab$bperr>0 & pmtab$pbem_allele>=0 & pmtab$same_allele == 0)] = 4
+  pmtab$CLASS[which(pmtab$af_control>0 & pmtab$bperr>0 & pmtab$pbem_allele>0 & pmtab$same_allele == 1)] = 5
+  return(pmtab)
+}
+
+add_class_xbg = function(pmtab,xbg){
+  if(nrow(pmtab)>0){
+    pmtab$CLASS.xbg = NA
+    pmtab$CLASS.xbg[which(pmtab$af_control<=xbg & pmtab$bperr<=xbg & pmtab$pbem_allele<=xbg)] = 1
+    pmtab$CLASS.xbg[which(pmtab$af_control<=xbg & pmtab$bperr>xbg & pmtab$pbem_allele<=xbg)] = 2
+    pmtab$CLASS.xbg[which(pmtab$af_control<=xbg & pmtab$bperr>xbg & pmtab$pbem_allele>xbg)] = 3
+    pmtab$CLASS.xbg[which(pmtab$af_control>xbg & pmtab$bperr>xbg & pmtab$pbem_allele>=xbg & pmtab$same_allele == 0)] = 4
+    pmtab$CLASS.xbg[which(pmtab$af_control>xbg & pmtab$bperr>xbg & pmtab$pbem_allele>xbg & pmtab$same_allele == 1)] = 5
+    return(pmtab)
+  } else {
+    return(pmtab)
+  }
+}

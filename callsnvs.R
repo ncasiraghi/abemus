@@ -11,10 +11,15 @@ source(abemus_functions)
 
 cat(paste("[",Sys.time(),"]\tDetection of somatic SNVs in case samples","\n"))
 
-if(!file.exists(file.path(outdir, "Results_new"))){
-  dir.create(file.path(outdir, "Results_new"), showWarnings = TRUE)
+if(!file.exists(file.path(outdir, "Results"))){
+  results_folder_name = "Results"
+  dir.create(file.path(outdir,results_folder_name), showWarnings = T)
+} else {
+  results_folder_name = paste0("Results_",gsub(as.character(Sys.time()),pattern = " ",replacement = "_"))
+  dir.create(file.path(outdir,results_folder_name), showWarnings = T)
 }
-setwd(file.path(outdir, "Results_new"))
+
+setwd(file.path(outdir,results_folder_name))
 timestart <- proc.time()
 
 # Import sample info file
@@ -58,61 +63,33 @@ if(!is.numeric(AFbycov)){
   }
 }
 
-add_names = function(pm,name.patient,name.plasma,name.germline){
-  pm$PatientID = name.patient
-  pm$CaseID = name.plasma
-  pm$GermlineID = name.germline
-  pm = pm[with(pm,order(chr,pos)),]
-  return(pm)
-}
-
-add_class = function(pmtab){
-  pmtab$CLASS = NA
-  pmtab$CLASS[which(pmtab$af_control==0 & pmtab$bperr==0 & pmtab$pbem_allele==0)] = 1
-  pmtab$CLASS[which(pmtab$af_control==0 & pmtab$bperr>0 & pmtab$pbem_allele==0)] = 2
-  pmtab$CLASS[which(pmtab$af_control==0 & pmtab$bperr>0 & pmtab$pbem_allele>0)] = 3
-  pmtab$CLASS[which(pmtab$af_control>0 & pmtab$bperr>0 & pmtab$pbem_allele>=0 & pmtab$same_allele == 0)] = 4
-  pmtab$CLASS[which(pmtab$af_control>0 & pmtab$bperr>0 & pmtab$pbem_allele>0 & pmtab$same_allele == 1)] = 5
-  return(pmtab)
-}
-
-add_class_xbg = function(pmtab,xbg){
-  if(nrow(pmtab)>0){
-    pmtab$CLASS.xbg = NA
-    pmtab$CLASS.xbg[which(pmtab$af_control<=xbg & pmtab$bperr<=xbg & pmtab$pbem_allele<=xbg)] = 1
-    pmtab$CLASS.xbg[which(pmtab$af_control<=xbg & pmtab$bperr>xbg & pmtab$pbem_allele<=xbg)] = 2
-    pmtab$CLASS.xbg[which(pmtab$af_control<=xbg & pmtab$bperr>xbg & pmtab$pbem_allele>xbg)] = 3
-    pmtab$CLASS.xbg[which(pmtab$af_control>xbg & pmtab$bperr>xbg & pmtab$pbem_allele>=xbg & pmtab$same_allele == 0)] = 4
-    pmtab$CLASS.xbg[which(pmtab$af_control>xbg & pmtab$bperr>xbg & pmtab$pbem_allele>xbg & pmtab$same_allele == 1)] = 5
-    return(pmtab)
+# Check if corrected AF threshold exists
+if(!is.numeric(AFbycov)){
+  if(file.exists(file.path(controls_dir,"minaf_cov_corrected.RData"))){
+    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds corrected:",file.path(controls_dir,"minaf_cov_corrected.RData"),"[ ok ]"),"\n")
+    load(file = file.path(controls_dir,"minaf_cov_corrected.RData"))
   } else {
-    return(pmtab)
+    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds corrected:",file.path(controls_dir,"minaf_cov_corrected.RData"),"[ NOT found ]"),"\n")
+    quit()
   }
 }
 
-apply_AF_filters <- function(chrpmF1,AFbycov,minaf_cov,minaf,mybreaks,mc.cores){
+apply_AF_filters <- function(chrpmF1,AFbycov,af.threshold.table,minaf,mybreaks,mc.cores){
   if (AFbycov == FALSE){
     chrpmF1[,'af_threshold'] <- minaf
-    #chrpmF2 = chrpmF1[which(chrpmF1$af_case >= minaf),,drop=F]
   } else if (is.numeric(AFbycov)){
     chrpmF1[,'af_threshold'] <- AFbycov
-    #chrpmF2 = chrpmF1[which(chrpmF1$af_case >= AFbycov),,drop=F]
   } else if (AFbycov == TRUE){
-    thresholds = as.numeric(minaf_cov[,-1])
-    
+    thresholds = as.numeric(af.threshold.table[,-1])
     af_filter_by_coverage <- function(y,thresholds,chrpmF1){
       this = chrpmF1[y,,drop=F]
       minaf_covth = thresholds[findInterval(this$cov_case,mybreaks)]
       this[,'af_threshold'] <- minaf_covth
       return(this)
     }
-    
     out = mclapply(seq(1,nrow(chrpmF1),1),af_filter_by_coverage,thresholds=thresholds,chrpmF1=chrpmF1,mc.cores = mc.cores)
     chrpmF1 = fromListToDF(out)
-    #chrpmF2 = chrpmF1[which(chrpmF1$af_case >= chrpmF1$af_threshold),,drop=F]
-    
   }
-  #return(list(chrpmF1,chrpmF2))
   return(chrpmF1)
 }
 
@@ -135,7 +112,7 @@ filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out
   out = mclapply(seq(1,nrow(snvs),1),CheckAltReads,snvs=snvs,mc.cores = mc.cores)
   snvs = fromListToDF(out)
   snvs = snvs[which(snvs$af > 0 ),]
-  snvs = snvs[which(snvs$cov > mincov ),]
+  snvs = snvs[which(snvs$cov >= mincov ),]
   snvs = snvs[which(snvs$cov.alt >= minalt ),]
   snvs = unique(snvs)
   if(nrow(snvs)==0){
@@ -148,11 +125,13 @@ filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out
   system(cmd)
   ctrl.pileup = fread("filtered.germline.pileup.txt",stringsAsFactors = F,showProgress = T,header = F,na.strings = "",colClasses = list(character=10))
   #system("rm postogrep.txt filtered.germline.pileup.txt")
+  ctrl.pileup = ctrl.pileup[,1:9]
   ctrl.pileup = unique(ctrl.pileup)
   ctrl.pileup = data.frame(ctrl.pileup)
-  names(ctrl.pileup)=c("chr","pos","ref","A","C","G","T","af","cov","dbsnp")   
+  #names(ctrl.pileup)=c("chr","pos","ref","A","C","G","T","af","cov","dbsnp")
+  names(ctrl.pileup)=c("chr","pos","ref","A","C","G","T","af","cov")
   # F1) Custom basic filters [ in germline ]
-  common = merge(x = snvs,y = ctrl.pileup,by = c("chr","pos","ref","dbsnp"),all.x = T,suffixes = c("_case","_control"))
+  common = merge(x = snvs,y = ctrl.pileup,by = c("chr","pos","ref"),all.x = T,suffixes = c("_case","_control"))
   toremove = which(common$cov_control < mincovgerm | common$af_control > maxafgerm )
   if(length(toremove)>0){
     putsnvs <- common[-toremove,,drop=F]
@@ -166,7 +145,7 @@ filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out
     tabpbem = data.frame(fread(input = tabpbem_file,stringsAsFactors = F,showProgress = F,header = F,colClasses = list(character=2,character=5)),stringsAsFactors = F)
     colnames(tabpbem) <- c("group","chr","pos","ref","dbsnp","gc","map","uniq","is_rndm","tot_coverage","total.A","total.C","total.G","total.T","n_pos_available",'n_pos_af_lth','n_pos_af_gth','count.A_af_gth','count.C_af_gth','count.G_af_gth','count.T_af_gth',"bperr","tot_reads_supporting_alt")
     # TABLE 1
-    chrpmF1 = apply_AF_filters(chrpmF1=putsnvs,AFbycov=AFbycov,mybreaks=covbin,minaf_cov=minaf_cov,minaf=minaf,mc.cores=mc.cores)
+    chrpmF1 = apply_AF_filters(chrpmF1=putsnvs,AFbycov=AFbycov,mybreaks=covbin,af.threshold.table=minaf_cov_corrected,minaf=minaf,mc.cores=mc.cores)
     chrpmF1 = chrpmF1[,c("chr","pos","ref","alt","A_case","C_case","G_case","T_case","af_case","cov_case","Ars","Crs","Grs","Trs","rev.ref","fwd.ref","cov.alt","rev.alt","fwd.alt","strandbias","A_control","C_control","G_control","T_control","af_control","cov_control","af_threshold")]
     chrpmF1$group <- paste(chrpmF1$chr,chrpmF1$pos,chrpmF1$ref,sep = ":")
     #cpmf1 = merge(x = chrpmF1,y = tabpbem,by = c("group","chr","pos","ref","dbsnp"),all.x = T)
@@ -187,13 +166,11 @@ filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out
     cpmf3 = add_class_xbg(pmtab = cpmf2,xbg = as.numeric(tab_bg_pbem$background_pbem))
     cpmf3$bperr[which(cpmf3$bperr > 0.2)] = 0.2
     if(nrow(cpmf3)>0){
-      to.keep = which(sapply(1:nrow(cpmf3), function(k) 
-        cpmf3$af_case[k]>=tab_cov_pbem[min(which(covs>=cpmf3$cov_case[k])),
-                                       min(which(afs>=cpmf3$bperr[k]))]))
+      pbem_coverage_filter = sapply(1:nrow(cpmf3), function(k) tab_cov_pbem[min(which(covs>=cpmf3$cov_case[k])),min(which(afs>=cpmf3$bperr[k]))])
+      cpmf3$filter.pbem_coverage <- pbem_coverage_filter
       cpmf3$pass.filter.pbem_coverage = 0
-      cpmf3$pass.filter.pbem_coverage[to.keep] = 1
+      cpmf3$pass.filter.pbem_coverage[which(cpmf3$af_case >= cpmf3$filter.pbem_coverage)] = 1
     }
-
     # Return chromosome tables
     write.table(cpmf1,file = 'chrpm_f1.tsv',sep = '\t',col.names = F,row.names = F,quote = F)
     write.table(cpmf2,file = 'chrpm_f2.tsv',sep = '\t',col.names = F,row.names = F,quote = F)
@@ -215,15 +192,23 @@ for(id in 1:nrow(TableSif)){
   name.patient = TableSif$patient[id]
   name.plasma = gsub(basename(this$plasma.bam),pattern = ".bam",replacement = "")
   name.germline = gsub(basename(this$germline.bam),pattern = ".bam",replacement = "")
-  cat(paste("\n[",Sys.time(),"]\tPatient:",name.patient,"\tCase:",name.plasma,"\tControl:",name.germline),"\n")
+  cat(paste("[",Sys.time(),"]\tPatient:",name.patient,"\tCase:",name.plasma,"\tControl:",name.germline),"\n")
   out1 = paste0("pmtab_F1_",name.plasma,".tsv")
   out2 = paste0("pmtab_F2_",name.plasma,".tsv")
   out3 = paste0("pmtab_F3_",name.plasma,".tsv")
   # create patient sub-folder
-  patient_folder = file.path(outdir,'Results_new',name.patient)
+  patient_folder = file.path(outdir,results_folder_name,name.patient)
   dir.create(patient_folder)
   germline.folder = list.files(pacbamfolder,pattern = name.germline,full.names = T)
+  if(length(germline.folder)==0){
+    message("[ERROR] Cannot find folder:\t",file.path(pacbamfolder,name.germline))
+    quit()
+  }
   plasma.folder = list.files(pacbamfolder,pattern = name.plasma,full.names = T)
+  if(length(plasma.folder)==0){
+    message("[ERROR] Cannot find folder:\t",file.path(pacbamfolder,name.plasma))
+    quit()
+  }
   # run in parallel on chromosomes
   mclapply(seq(1,length(chromosomes),1),filter,chromosomes=chromosomes,patient_folder=patient_folder,plasma.folder=plasma.folder,germline.folder=germline.folder,out1=out1,out2=out2,mc.cores = chrom.in.parallel)
   # collapse all chromosome outs into a single table
