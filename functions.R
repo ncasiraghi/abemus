@@ -63,7 +63,8 @@ pos2bperr = function(id,targets,germlineset,step,chrom,lev,covbin,af_max_to_comp
   if(file.info(filtpileup)$size == 0){
     cat(paste("[",Sys.time(),"]\tpositions in ",outfile,"not found in any pileups."),"\n")
   } else {
-    completetab_all = fread(filtpileup,stringsAsFactors = F,showProgress = T,header = F,na.strings = "",colClasses=list(character=10))
+    #completetab_all = fread(filtpileup,stringsAsFactors = F,showProgress = F,header = F,na.strings = "",colClasses=list(character=10))
+    completetab_all = read.delim(filtpileup,stringsAsFactors = F,header = F,sep = "\t",na.strings = "")
     names(completetab_all)=c("chr","pos","ref","A","C","G","T","af","RD","dbsnp")
     # exclude annotated and private SNPs [ to compute AF threshold]
     completetab = completetab_all[which(is.na(completetab_all$dbsnp)),,drop=F]
@@ -76,7 +77,8 @@ pos2bperr = function(id,targets,germlineset,step,chrom,lev,covbin,af_max_to_comp
       mytabz =  completetab[which(completetab$af == 0),,drop=F]
       afz = afz + as.array(table(cut(mytabz$RD,breaks = covbin,include.lowest = T)))
       write.table(t(afz),file = afzchrom,sep="\t",col.names = F,row.names = F,quote = F,append = F)
-      write.table(mytabaf[,8:9,with=F],file = mytabafchrom,append = F,sep = "\t",quote = F,row.names = F,col.names = F)
+      #write.table(mytabaf[,8:9,with=F],file = mytabafchrom,append = F,sep = "\t",quote = F,row.names = F,col.names = F)
+      write.table(mytabaf[,8:9],file = mytabafchrom,append = F,sep = "\t",quote = F,row.names = F,col.names = F)
       # compute pbem
       completetab_dbsnp$group = paste(completetab_dbsnp$chr,completetab_dbsnp$pos,completetab_dbsnp$ref,sep=":")
       dat <- data.table(completetab_dbsnp, key="group")

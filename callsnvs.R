@@ -65,11 +65,11 @@ if(!is.numeric(AFbycov)){
 
 # Check if corrected AF threshold exists
 if(!is.numeric(AFbycov)){
-  if(file.exists(file.path(controls_dir,"minaf_cov_corrected.RData"))){
-    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds corrected:",file.path(controls_dir,"minaf_cov_corrected.RData"),"[ ok ]"),"\n")
-    load(file = file.path(controls_dir,"minaf_cov_corrected.RData"))
+  if(file.exists(file.path(controls_dir,"minaf_cov_corrected_10r_0.995.RData"))){
+    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds corrected:",file.path(controls_dir,"minaf_cov_corrected_10r_0.995.RData"),"[ ok ]"),"\n")
+    load(file = file.path(controls_dir,"minaf_cov_corrected_10r_0.995.RData"))
   } else {
-    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds corrected:",file.path(controls_dir,"minaf_cov_corrected.RData"),"[ NOT found ]"),"\n")
+    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds corrected:",file.path(controls_dir,"minaf_cov_corrected_10r_0.995.RData"),"[ NOT found ]"),"\n")
     quit()
   }
 }
@@ -101,7 +101,11 @@ filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out
   setwd(chromdir)
   # import files
   plasma_snvs = list.files(file.path(plasma.folder,"snvs"),pattern = paste0("_",chrom,".snvs"),full.names = T)
-  snvs = fread(plasma_snvs,stringsAsFactors = F,showProgress = F,header = F,skip = 1,na.strings = "",colClasses = list(character=15),verbose = F)
+  n.rows.plasma_snvs = as.numeric(unlist(strsplit(trimws(x = system(paste("wc -l",plasma_snvs),intern = T),which = "left"),split = " "))[[1]])
+  if(n.rows.plasma_snvs == 1){
+    return()
+  }         
+  snvs = fread(plasma_snvs,stringsAsFactors = F,showProgress = F,header = F,skip = 1,na.strings = "",colClasses = list(character=3,4,15),verbose = F)
   snvs = unique(snvs)
   snvs = data.frame(snvs)
   names(snvs)=c("chr","pos","ref","alt","A","C","G","T","af","cov","Ars","Crs","Grs","Trs","dbsnp")
@@ -156,15 +160,25 @@ filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out
     # compute pbem allele
     Nids = which(cpmf1$alt=='N')
     if(length(Nids)>0){cpmf1 = cpmf1[-Nids,]}
+    cpmf1 = cpmf1[which(!is.na(cpmf1$cov_control)),,drop=F]
+    if(nrow(cpmf1)==0){
+      return()
+    }
     out = mclapply(seq(1,nrow(cpmf1),1),compute_pbem_allele,abemus=cpmf1,mc.cores = mc.cores)
     cpmf1 = fromListToDF(out)
     # add CLASS standard
     cpmf1 = add_class(pmtab = cpmf1)
     # TABLE 2
+    cpmf1$af_threshold[which(is.na(cpmf1$af_threshold))] <- -1
     cpmf2 = cpmf1[which(cpmf1$af_case >= cpmf1$af_threshold),,drop=F]
+    if(nrow(cpmf2)==0){
+      return()
+    }
+    cpmf2$af_threshold[which(cpmf2$af_threshold == -1)] <- NA
     # TABLE 3
     cpmf3 = add_class_xbg(pmtab = cpmf2,xbg = as.numeric(tab_bg_pbem$background_pbem))
     cpmf3$bperr[which(cpmf3$bperr > 0.2)] = 0.2
+    cpmf3$bperr[which(is.na(cpmf3$bperr))] = 0.2 # assign high pbem if it is NA 
     if(nrow(cpmf3)>0){
       pbem_coverage_filter = sapply(1:nrow(cpmf3), function(k) tab_cov_pbem[min(which(covs>=cpmf3$cov_case[k])),min(which(afs>=cpmf3$bperr[k]))])
       cpmf3$filter.pbem_coverage <- pbem_coverage_filter

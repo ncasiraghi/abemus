@@ -13,7 +13,7 @@ if(length(args)!=4){
 
 # input data
 config = args[1]
-#config="/scratch/sharedCO/Casiraghi/Abemus_data/InSilicoData/HALO_t1_c10/abemus_configure.R"
+#config="/scratch/sharedCO/Casiraghi/Abemus_data/InSilicoData/HALO_t1/abemus_configure.R"
 replicas = as.numeric(args[2])
 #replicas=10
 replicas.in.parallel = as.numeric(args[3])
@@ -146,30 +146,6 @@ for(i in start:end){
   }
 }
 
-
-# # select the most populated coverage bin
-# mpb.index = which(names(minaf_cov_corrected)==names(datacount_bin_complete)[1])
-# 
-# for(i in 2:length(minaf_cov_corrected)){
-#   bin.name = names(minaf_cov_corrected)[i]
-#   bin.card = as.numeric(datacount_bin_complete[which(names(datacount_bin_complete)==bin.name)])
-#   if(!identical(bin.card,numeric(0))){
-#     if(bin.card < C & i < mpb.index){
-#       minaf_cov_corrected[i] <- 1
-#     }
-#     if(bin.card >= C & i >= mpb.index){
-#       last.afth.used <- minaf_cov_corrected[i]
-#     }
-#     if(bin.card >= C & i < mpb.index){
-#       last.afth.used <- minaf_cov_corrected[i]
-#     }
-#     if(bin.card < C & i >= mpb.index){
-#       minaf_cov_corrected[i] <- last.afth.used
-#     }
-#   }
-# }
-# 
-
 minaf_cov_corrected[which(is.na(minaf_cov_corrected))] <- last.afth.used
 minaf_cov_corrected[which(minaf_cov_corrected==1)] <- NA
 
@@ -189,13 +165,18 @@ par(mfrow=c(3,1),oma=c(2,2,0,0))
 a = as.numeric(th_results_bin[which(th_results_bin$specificity==this.detection.specificity),2:length(th_results_bin)])
 b = as.numeric(minaf_cov_corrected[2:length(minaf_cov_corrected)])
 
-count = datacount_bin+afz 
-col = rep("grey",length(count))
-col[which(count>=C)] <- "forestgreen"
+count = rbind(as.numeric(datacount_bin),as.numeric(afz))
+total.pos = datacount_bin+afz
 
-barplot(count,las=2,main=this.detection.specificity,col=col)
+col = rep("grey",ncol(count))
+col[which(total.pos>=C)] <- "forestgreen"
+
+xcord=barplot(count,las=2,main=this.detection.specificity,col=c("grey60","grey90"),border = c("grey60","grey90"),names.arg = names(total.pos),ylab = "n. of positions")
 mtext(controls_dir,cex = 0.6)
-barplot(a,las=2,ylab="Automatic AF threshold",col=col,names.arg = round(a,4))
-barplot(b,las=2,ylab="Adjusted AF threshold",ylim=par("yaxp")[1:2],col=col,names.arg = round(b,4))
+text(x = xcord[which(total.pos>=C)],y = total.pos[which(total.pos>=C)],pos = 1,labels = "*",cex = 1.5,col = "forestgreen")
+abline(h = C,lwd=0.5,lty=2)
+
+barplot(a,las=2,ylab="Automatic AF threshold",col=col,border = col,names.arg = round(a,4))
+barplot(b,las=2,ylab="Adjusted AF threshold",ylim=par("yaxp")[1:2],col=col,border=col,names.arg = round(b,4))
 
 dev.off()
