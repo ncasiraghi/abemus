@@ -1,3 +1,10 @@
 # abemus
 adaptive per base error model for ultra-deep sequencing data
 
+Liquid biopsies contain circulating cell free DNA (cfDNA) released from widespread tumor cells, potentially uncovering the full tumor
+landscape. By using next generation sequencing on cfDNA obtained from plasma, we propose an ad hoc computational procedure (ABEMUS) to
+detect somatic point mutations that could emerge under the treatment pressure and as drug resistance mechanism.
+First, each targeted base is genotyped in controls to build the allelic fraction distribution necessary to determine the cut-off to call a somatic point mutation with a desired specificity in plasma samples. Analyses showed that the estimation of this threshold is more stable by increasing the number of controls and furthermore its value significantly varies according to coverage levels.
+Second, control samples are exploited to build a genomic locus-specific error model to estimate the probability that observed case allelic fraction is indeed evidence of a somatic event. Specifically, this error model is computed for each locus as the ratio between the number of reads supporting alleles different from the reference one (alternative allele) and the total coverage across all control samples. 
+Third, plasma samples are analysed and only targeted positions passing stringent custom filtering criteria are retained for next analysis. Indeed, by exploiting results computed in the first step, the combination of desired detection specificity and locus coverage gives the most appropriate allelic fraction cut-off to apply to the interrogated position. Loci passing also the ad hoc allelic fraction filtering constitute the set of putative somatic point mutations. 
+Fourth, additional filtering analyses based on the computed base-error model and aimed to mitigate effects of potential experimental biases are used to end up with a final set of putative somatic point mutations. The analytical work can be applied to the study of any tumor type.
