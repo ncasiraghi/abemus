@@ -1,8 +1,10 @@
 library(data.table)
 main.folder = "/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom_c10_model"
+#main.folder = "/scratch/sharedCO/Casiraghi/InSilicoData/HALO_byChrom_c10_model"
 
 samples = list.dirs(main.folder,full.names = T,recursive = F)
-#s<-samples[1]
+samples = grep(samples,pattern = "adm",value = T)
+samples = setdiff(samples,"/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom_c10_model/adm20_0")
 
 get.ALT = function(m){
   REF = m["ref"]
@@ -14,6 +16,7 @@ get.ALT = function(m){
   return(as.character(ALT))
 }
 
+#s<-samples[1]
 for(s in samples){
   message(basename(s))
   p = list.files(path = file.path(s,"pileup"),full.names = T)
