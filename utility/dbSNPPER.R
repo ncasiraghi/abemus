@@ -14,7 +14,8 @@ ALL = args[1]
 BED = args[2]
 outfolder = args[3]
 
-header = "/elaborazioni/sharedCO/Home_casiraghi/Prog/abemus/utility/dbSNP144_header.txt"
+#header = "/elaborazioni/sharedCO/Home_casiraghi/Prog/abemus/utility/dbSNP144_header.txt"
+header = "/elaborazioni/sharedCO/CO_Shares/dbSNP/dbSNP151_hg19/dbSNP151_header.txt"
 
 setwd(outfolder)
 timestart <- proc.time()
