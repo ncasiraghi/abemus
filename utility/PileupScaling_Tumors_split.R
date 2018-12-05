@@ -1,13 +1,28 @@
-setwd("/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom_c10_model")
 library(data.table)
 
-admixtures = grep(basename(list.dirs("/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom",recursive = F,full.names = T)),pattern = "adm",value = T)
-mutations = read.delim("/scratch/sharedCO/Casiraghi/Abemus_data/InSilicoData_Tumors/HALO_c10_model/Scripts/HALO_byChrom_200genes.tsv",header = F,stringsAsFactors = F)
+args <- commandArgs(trailingOnly = TRUE)
+
+if(length(args)!=4){
+  message("\nERROR! Required arguments:\n\n1. out.folder\n2. mutations_file\n3. full_coverage_folder\n4. coverage scaling factor\n")
+  quit()
+}
+
+wd = args[1]
+mutation_file = args[2]
+full_coverage_folder = args[3]
+sf = as.numeric(args[4])
+
+#wd = "/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_t0.1_byChrom_c10_model"
+#mutation_file="/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_t0.1_byChrom_100genes.tsv"
+#full_coverage_folder="/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_t0.1_byChrom"
+#sf = 0.10
+
+setwd(wd)
+admixtures = grep(basename(list.dirs(full_coverage_folder,recursive = F,full.names = T)),pattern = "adm",value = T)
+mutations = read.delim(mutation_file,header = F,stringsAsFactors = F)
 mutations = mutations[,1:2]
 colnames(mutations)=c("chr","pos")
 mutations <- within(mutations,  group <- paste(chr, pos, sep=":"))
-
-sf = 0.10
 
 scaling <- function(x,sf){
   for(i in 1:nrow(x)){
@@ -22,13 +37,11 @@ scaling <- function(x,sf){
   return(x)
 }
 
-# Scaling in pileup
-admixtures=setdiff(admixtures,"adm20_0")
-
+# Scaling pileup
 for(x in admixtures){
   message(x)
-  ps = list.files(path = file.path("/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom/",x,"pileup"),full.names = T)
-  #p=ps[15]
+  # folders output
+  ps = list.files(path = file.path(full_coverage_folder,x,"pileup"),full.names = T)
   for(p in ps){
     message(p)
     # upload original 100% coverage file
@@ -40,7 +53,7 @@ for(x in admixtures){
     if(nrow(to_scale)>0){
       xsc = scaling(x = to_scale,sf = sf)
       # upload the scaled file
-      file.to.correct = gsub(p,pattern = "HALO_byChrom",replacement = "HALO_byChrom_c10_model")
+      file.to.correct = gsub(p,pattern = basename(full_coverage_folder),replacement = basename(wd))
       b=fread(input = file.to.correct,stringsAsFactors = F,data.table = F,showProgress = F)
       gb=paste(b$chr, b$pos, sep=":")
       idx_b = which(gb %in% mutations$group)

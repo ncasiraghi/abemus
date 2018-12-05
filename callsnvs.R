@@ -24,7 +24,6 @@ timestart <- proc.time()
 
 # Import sample info file
 TableSif = read.delim(filesif,as.is=T)
-TableSif=TableSif[172:nrow(TableSif),]
 
 # remove NAs and keep only case samples having matched germline samples
 nas = which(is.na(TableSif$plasma.bam) | is.na(TableSif$germline.bam))
@@ -37,12 +36,14 @@ chromosomes = sort(paste0("chr",chromosomes[-nrow(chromosomes),1]))
 # Apply filters to define a set of putative SNVs
 cat(paste("[",Sys.time(),"]\tApply basic filters"),"\n")
 fpam = data.frame(AFbycov = as.character(AFbycov),
-                  spec = as.character(spec),
+                  #spec = as.character(spec),
+                  spec = as.character(basename(minaf_corrected_table)),
                   mincov = as.character(mincov),
                   minalt = as.character(minalt),
                   mincovgerm = as.character(mincovgerm),
                   maxafgerm = as.character(maxafgerm),
                   filtering_date = Sys.time(),
+                  spec_extended = as.character(minaf_corrected_table),
                   stringsAsFactors = F)
 write.table(fpam,file = "filtering_criteria.tsv",col.names = T,row.names = F,sep="\t",quote = F)
 
@@ -54,33 +55,29 @@ load("/elaborazioni/sharedCO/Home_casiraghi/Prog/abemus/data/PBEsim.RData")
 tab_cov_pbem = tab.list[[6]]
 
 # Check if data tables exists
-if(!is.numeric(AFbycov)){
-  if(file.exists(file.path(controls_dir,"datathreshold.RData"))){
-    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold.RData"),"[ ok ]"),"\n")
-    load(file = file.path(controls_dir,"datathreshold.RData"))
-  } else {
-    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold.RData"),"[ NOT found ]"),"\n")
-    quit()
-  }
+if(file.exists(file.path(controls_dir,"datathreshold.RData"))){
+  cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold.RData"),"[ ok ]"),"\n")
+  load(file = file.path(controls_dir,"datathreshold.RData"))
+} else {
+  cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds:",file.path(controls_dir,"datathreshold.RData"),"[ NOT found ]"),"\n")
+  quit()
 }
 
 # Check if corrected AF threshold exists
-if(!is.numeric(AFbycov)){
-  if(file.exists(file.path(controls_dir,"minaf_cov_corrected_10r_0.995.RData"))){
-    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds corrected:",file.path(controls_dir,"minaf_cov_corrected_10r_0.995.RData"),"[ ok ]"),"\n")
-    load(file = file.path(controls_dir,"minaf_cov_corrected_10r_0.995.RData"))
-  } else {
-    cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds corrected:",file.path(controls_dir,"minaf_cov_corrected_10r_0.995.RData"),"[ NOT found ]"),"\n")
-    quit()
-  }
+if(file.exists(file.path(minaf_corrected_table))){
+  cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds corrected:",file.path(minaf_corrected_table),"[ ok ]"),"\n")
+  load(file = file.path(minaf_corrected_table))
+} else {
+  cat(paste("[",Sys.time(),"]\tlooking for data table with AF thresholds corrected:",file.path(minaf_corrected_table),"[ NOT found ]"),"\n")
+  quit()
 }
 
 apply_AF_filters <- function(chrpmF1,AFbycov,af.threshold.table,minaf,mybreaks,mc.cores){
-  if (AFbycov == FALSE){
+  if (AFbycov == FALSE & !is.numeric(AFbycov)){
     chrpmF1[,'af_threshold'] <- minaf
   } else if (is.numeric(AFbycov)){
     chrpmF1[,'af_threshold'] <- AFbycov
-  } else if (AFbycov == TRUE){
+  } else if (AFbycov == TRUE & !is.numeric(AFbycov)){
     thresholds = as.numeric(af.threshold.table[,-1])
     af_filter_by_coverage <- function(y,thresholds,chrpmF1){
       this = chrpmF1[y,,drop=F]
@@ -214,12 +211,12 @@ for(id in 1:nrow(TableSif)){
   # create patient sub-folder
   patient_folder = file.path(outdir,results_folder_name,name.patient)
   dir.create(patient_folder)
-  germline.folder = list.files(pacbamfolder,pattern = name.germline,full.names = T)
+  germline.folder = list.files(pacbamfolder,pattern = paste0(name.germline,"$"),full.names = T)
   if(length(germline.folder)==0){
     message("[ERROR] Cannot find folder:\t",file.path(pacbamfolder,name.germline))
     quit()
   }
-  plasma.folder = list.files(pacbamfolder,pattern = name.plasma,full.names = T)
+  plasma.folder = list.files(pacbamfolder,pattern = paste0(name.plasma,"$"),full.names = T)
   if(length(plasma.folder)==0){
     message("[ERROR] Cannot find folder:\t",file.path(pacbamfolder,name.plasma))
     quit()

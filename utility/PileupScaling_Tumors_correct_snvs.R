@@ -1,10 +1,16 @@
 library(data.table)
-main.folder = "/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom_c10_model"
-#main.folder = "/scratch/sharedCO/Casiraghi/InSilicoData/HALO_byChrom_c10_model"
 
+args <- commandArgs(trailingOnly = TRUE)
+
+if(length(args)!=1){
+  message("\nERROR! Required arguments:\n\n1. main folder i.e. /scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom_c10_model\n")
+  quit()
+}
+
+#main.folder = "/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom_c10_model"
+main.folder = args[1]
 samples = list.dirs(main.folder,full.names = T,recursive = F)
 samples = grep(samples,pattern = "adm",value = T)
-samples = setdiff(samples,"/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom_c10_model/adm20_0")
 
 get.ALT = function(m){
   REF = m["ref"]

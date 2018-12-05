@@ -13,13 +13,13 @@ if(length(args)!=4){
 
 # input data
 config = args[1]
-#config="/scratch/sharedCO/Casiraghi/Abemus_data/InSilicoData/HALO_t1/abemus_configure.R"
+#config="/scratch/sharedCO/Casiraghi/Abemus_data/AmpliSeq_AR_STM2015/abemus_configure.R"
 replicas = as.numeric(args[2])
 #replicas=10
 replicas.in.parallel = as.numeric(args[3])
 #replicas.in.parallel = 2
 this.detection.specificity = as.numeric(args[4]) 
-#this.detection.specificity = 0.995
+#this.detection.specificity = 0.95
 
 source(file = config)
 setwd(controls_dir)
@@ -30,7 +30,7 @@ source(abemus_functions)
 covbin = seq(0,5000,by = coverage_binning)
 covbin[length(covbin)] <- Inf
 lev = levels(cut(1,breaks=covbin,include.lowest=TRUE))
-probs = seq(0.99,1,0.0001)
+probs = seq(0.9,1,0.0001)
 
 vafcov_file = file.path(pbem_dir,"afgtz.tsv")
 afz_file = file.path(pbem_dir,"afz.RData")
@@ -66,7 +66,8 @@ a <- cut(vafcov[,2],breaks = covbin,include.lowest = T)
 
 datacount_bin_complete = datacount_bin+afz
 datacount_bin_complete = datacount_bin_complete[grep(pattern = "Inf",names(datacount_bin_complete),invert = T,value = T)]
-datacount_bin_complete = sort(datacount_bin_complete,decreasing = T)
+#datacount_bin_complete = sort(datacount_bin_complete,decreasing = T) # sort by all 
+datacount_bin_complete=datacount_bin_complete[names(sort(datacount_bin,decreasing = T))] # sort by AF>0
 datacount_bin_complete = datacount_bin_complete[which(datacount_bin_complete>0)]
 
 stop = length(datacount_bin_complete)-1
@@ -114,7 +115,7 @@ for(i in 1:stop){
 
 message("ROSPO")
 
-name.out = paste0("tab",replicas,"r_",this.detection.specificity,".RData")
+name.out = paste0("tab",replicas,"r_",this.detection.specificity,"_b.RData")
 save(tab,file = file.path(controls_dir,name.out),compress = T)
 
 #load(file = replica.rdata)
@@ -122,7 +123,7 @@ message("GRIGIO")
 
 # correct the threhsold table
 
-minaf_cov_corrected <- th_results_bin[which(th_results_bin$specificity == this.detection.specificity),]
+minaf_cov_corrected <- th_results_bin[which(round(th_results_bin$specificity,4) == as.numeric(this.detection.specificity)),]
 C = tab$last.stable.card[nrow(tab)]
 
 last.afth.used = 1
@@ -153,16 +154,16 @@ minaf_cov_corrected[which(minaf_cov_corrected==1)] <- NA
 N = length(minaf_cov_corrected)
 minaf_cov_corrected[N] <- minaf_cov_corrected[N-1]
 
-name.out = paste0("minaf_cov_corrected_",replicas,"r_",this.detection.specificity,".RData")
+name.out = paste0("minaf_cov_corrected_",replicas,"r_",this.detection.specificity,"_b.RData")
 save(minaf_cov_corrected,file = file.path(controls_dir,name.out))
 
 message("IN CATTIVITA")
 
-pdf.out = paste0("minaf_cov_corrected_",replicas,"r_",this.detection.specificity,".pdf")
+pdf.out = paste0("minaf_cov_corrected_",replicas,"r_",this.detection.specificity,"_b.pdf")
 pdf(pdf.out, h = 219, w = 297, paper='A4r')
 
 par(mfrow=c(3,1),oma=c(2,2,0,0))
-a = as.numeric(th_results_bin[which(th_results_bin$specificity==this.detection.specificity),2:length(th_results_bin)])
+a = as.numeric(th_results_bin[which(round(th_results_bin$specificity,4)==as.numeric(this.detection.specificity)),2:length(th_results_bin)])
 b = as.numeric(minaf_cov_corrected[2:length(minaf_cov_corrected)])
 
 count = rbind(as.numeric(datacount_bin),as.numeric(afz))

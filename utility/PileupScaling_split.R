@@ -1,22 +1,29 @@
 library(data.table)
 library(parallel)
 
-mc.cores = 30
-
 args <- commandArgs(trailingOnly = TRUE)
 
+if(length(args)!=4){
+  message("ERROR! Required arguments:\n1. list.of.samples\n2. COV_SCALE\n3. out.folder\n4. mc.cores")
+  quit()
+}
+
 # pileups to scale
-#folder.pacbam = "/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom"
-#list.of.samples = list.files(folder.pacbam,full.names = T,recursive = F)
-#list.of.samples = readLines("/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom_c10_model/list_tumors.txt")
 list.of.samples = readLines(args[1])
 list.of.pileups = list.files(file.path(list.of.samples,"pileup"),full.names = T,recursive = F)
 
 # Base Error model on real data
 pbem.model.bychrom = list.files("/scratch/sharedCO/Casiraghi/Abemus_data/IPM_tissues_Haloplex/BaseErrorModel",pattern = "bperr_chr",full.names = T)
 
+# Coverage Scaling 
+COV_SCALE = as.numeric(args[2])
+
 # Out folder where put scaled pileups
-out.folder = "/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom_c10_model/"
+#out.folder = "/scratch/sharedCO/Casiraghi/InSilicoData_Tumors/HALO_byChrom_c10_model/"
+#out.folder = "/scratch/sharedCO/Casiraghi/InSilicoData/HALO_t12.5_byChrom_c50_model/"
+out.folder = args[3]
+
+mc.cores = as.numeric(args[4])
 
 # Functions
 fromListToDF <- function(inputList){
@@ -132,7 +139,7 @@ for(id in list.of.samples){
       p = merge(x = p,y = pbem.chr,all.x = T,sort = T,by = "group")
       p = data.frame(p,stringsAsFactors = F)
       # apply scaling
-      out = mclapply(seq(1,nrow(p),1),scaling,p=p,cov.scaled = 0.10,mc.cores = mc.cores,mc.preschedule = T)
+      out = mclapply(seq(1,nrow(p),1),scaling,p=p,cov.scaled = COV_SCALE,mc.cores = mc.cores,mc.preschedule = T)
       p.scaled = fromListToDF(out)
       # write pileup file
       write.table(x = p.scaled,file = paste0(basename(y),".scaled"),col.names = F,row.names = F,sep = "\t",quote = F,na = "")

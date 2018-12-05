@@ -24,7 +24,7 @@ chromosomes = sort(paste0("chr",chromosomes[-nrow(chromosomes),1]))
 covbin = seq(0,5000,by = coverage_binning)
 covbin[length(covbin)] <- Inf
 lev = levels(cut(1,breaks=covbin,include.lowest=TRUE))
-probs = seq(0.99,1,0.0001)
+probs = seq(0.9,1,0.0001)
 
 vafcov_file = file.path(pbem_dir,"afgtz.tsv")
 afz_file = file.path(pbem_dir,"afz.RData")
