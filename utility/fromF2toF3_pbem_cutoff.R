@@ -13,7 +13,6 @@ tab_bg_pbem = read.delim(file = file.path(pbem_dir,"pbem_background.tsv"),as.is=
 # Import matrix for coverages and pbem
 load("/elaborazioni/sharedCO/Home_casiraghi/Prog/abemus/data/PBEsim.RData")
 tab_cov_pbem = tab.list[[6]]
-#tab_cov_pbem = tab_cov_pbem*sk
 
 add_class_xbg = function(pmtab,xbg){
   pmtab$CLASS.xbg = NA

@@ -13,7 +13,7 @@ library(data.table)
 
 # Abemus Results folder
 wd = args[1]
-AF = args[2]
+AF = args[2] # 0.05 
 ld = list.dirs(path = wd,full.names = T,recursive = F)
 
 #pm=ld[1]

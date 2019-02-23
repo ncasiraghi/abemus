@@ -195,7 +195,7 @@ filter = function(i,chromosomes,patient_folder,plasma.folder,germline.folder,out
   }
 }
 
-chrom.in.parallel = 5
+chrom.in.parallel = 2
 mc.cores = 10
 
 # iterate on tumor and matched control
