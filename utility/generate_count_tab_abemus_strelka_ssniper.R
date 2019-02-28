@@ -6,9 +6,8 @@ library(reshape2)
 
 af_case = 0.0
 cov_case = 10
-reported_snvs = NULL
 Rset <- seq(from = 0.5,to = 1.5,by = 0.1)
-pbemAFpar <- TRUE
+pbemAFpar <- FALSE
 pars=data.frame(af_case=af_case,cov_case=cov_case,pbemAFpar=pbemAFpar,stringsAsFactors = F)
 
 # Samples
@@ -24,6 +23,7 @@ pacbam=list.files("/scratch/sharedCO/Casiraghi/InSilicoDilution/PaCBAM/",full.na
 stm=read.delim("/elaborazioni/sharedCO/Abemus_data_analysis/Analysis_MultipleSamples_STM2014/tableS5_stm2014_mutations.tsv",header = T,stringsAsFactors = F,as.is = T)
 stm$sign=paste(stm$chr,stm$pos,sep = ":")
 reported_snvs=unique(stm$sign)
+reported_snvs = NULL
 
 if(pbemAFpar){
   # a. using pbem computed with only AFs < 0.2
@@ -32,7 +32,7 @@ if(pbemAFpar){
   setwd("/elaborazioni/sharedCO/Abemus_data_analysis/Analysis_InSilicoDilution_STM2014/comparison_abemus_strelka_ssniper_pbemAFpar")
 } else {
   # b. using pbem computed with all AFs
-  results_folder_abemus <- "/elaborazioni/sharedCO/Abemus_data_analysis/Analysis_InSilicoDilution_STM2014/ABEMUS/Results_pbem_no_AFpar_cftrlAF_0.2/"
+  results_folder_abemus <- "/elaborazioni/sharedCO/Abemus_data_analysis/Analysis_InSilicoDilution_STM2014/ABEMUS/Results_pbem_no_AFpar/"
   #bperr = fread("/scratch/sharedCO/Casiraghi/Abemus_data/AmpliSeq_AR_STM2015/BaseErrorModel_113/bperr.tsv",data.table=F)
   bperr = fread("/elaborazioni/sharedCO/Abemus_data_analysis/Analysis_InSilicoDilution_STM2014/ABEMUS/BaseErrorModel_pbem_no_AFpar/bperr.tsv",data.table=F)
   setwd("/elaborazioni/sharedCO/Abemus_data_analysis/Analysis_InSilicoDilution_STM2014/comparison_abemus_strelka_ssniper_pbem_no_AFpar")
@@ -43,7 +43,7 @@ results_folder_ssniper<- "/scratch/sharedCO/Casiraghi/InSilicoDilution/SomaticSn
 
 write.table(pars,file="pars_for_filtering.tsv",col.names=T,row.names=F,quote=F,sep="\t")
 
-calls_abemus_strelka <- function(tmp,s,af_case,cov_case,R,reported_snvs=NULL){
+calls_abemus_strelka <- function(tmp,s,af_case,cov_case,R,pacbam=pacbam,reported_snvs=NULL){
   # STRELKA2
   strelka_file = file.path(results_folder_strelka,gsub(".bam","",basename(tmp$plasma.bam[s])),"results/variants/somatic.snvs.vcf")
   strelka = read.delim(file = strelka_file,comment.char = "#",stringsAsFactors = F,header = F,as.is = T)
@@ -75,8 +75,8 @@ calls_abemus_strelka <- function(tmp,s,af_case,cov_case,R,reported_snvs=NULL){
     }
     # update scaling factor R
     abemus$filter.pbem_coverage=abemus$filter.pbem_coverage*R
-    abemus$pass.filter.pbem_coverage=0
-    abemus$pass.filter.pbem_coverage[which(abemus$af_case>=abemus$filter.pbem_coverage)]=1
+    abemus$pass.filter.pbem_coverage <- 0
+    abemus$pass.filter.pbem_coverage[which(abemus$af_case>=abemus$filter.pbem_coverage)] <- 1
     abemus = abemus[which(abemus$pass.filter.pbem_coverage==1),]
     if(nrow(abemus)==0){
       abemus=data.frame(sign=character(),stringsAsFactors = F)
@@ -88,10 +88,9 @@ calls_abemus_strelka <- function(tmp,s,af_case,cov_case,R,reported_snvs=NULL){
     }
     return(list(abemus,strelka))
   }
-  
 }
 
-calls_abemus_sniper <- function(tmp,s,af_case,cov_case,R,reported_snvs=NULL){
+calls_abemus_sniper <- function(tmp,s,af_case,cov_case,R,pacbam=pacbam,reported_snvs=NULL){
   # SOMATIC SNIPER
   sniper_file = file.path(results_folder_ssniper,gsub(".bam|.sorted.bam",".pm",basename(tmp$plasma.bam[s])))
   if(!file.exists(sniper_file)){
@@ -127,8 +126,8 @@ calls_abemus_sniper <- function(tmp,s,af_case,cov_case,R,reported_snvs=NULL){
     }
     # update scaling factor R
     abemus$filter.pbem_coverage=abemus$filter.pbem_coverage*R
-    abemus$pass.filter.pbem_coverage=0
-    abemus$pass.filter.pbem_coverage[which(abemus$af_case>=abemus$filter.pbem_coverage)]=1
+    abemus$pass.filter.pbem_coverage <- 0
+    abemus$pass.filter.pbem_coverage[which(abemus$af_case>=abemus$filter.pbem_coverage)] <- 1
     abemus = abemus[which(abemus$pass.filter.pbem_coverage==1),]
     if(nrow(abemus)==0){
       abemus=data.frame(sign=character(),stringsAsFactors = F)
@@ -140,7 +139,6 @@ calls_abemus_sniper <- function(tmp,s,af_case,cov_case,R,reported_snvs=NULL){
     }
     return(list(abemus,sniper))
   }
-  
 }
 
 
@@ -164,7 +162,7 @@ for(R in Rset){
     abemus.mut = c()
     strelka.mut = c()
     for(s in 1:nrow(tmp)){
-      out=calls_abemus_strelka(tmp = tmp,s = s,af_case = af_case,cov_case = cov_case,R = R,reported_snvs = reported_snvs)
+      out=calls_abemus_strelka(tmp = tmp,s = s,af_case = af_case,cov_case = cov_case,pacbam = pacbam,R = R)
       abemus=out[[1]]
       strelka=out[[2]]
       # Start counts
@@ -222,7 +220,7 @@ for(R in Rset){
     abemus.mut = c()
     sniper.mut = c()
     for(s in 1:nrow(tmp)){
-      out=calls_abemus_sniper(tmp = tmp,s = s,af_case = af_case,cov_case = cov_case,R = R,reported_snvs = reported_snvs)
+      out=calls_abemus_sniper(tmp = tmp,s = s,af_case = af_case,cov_case = cov_case,pacbam = pacbam,R = R)
       abemus=out[[1]]
       sniper=out[[2]]
       # Start counts
