@@ -3,28 +3,28 @@
 # [ General parameters ]
 
 # Output directory
-outdir = "/scratch/sharedCO/Casiraghi/Abemus_data/NimbleGen_SeqCapEZ_Exome_v3_Plasma_IPM/PLASMA_DEDUP/"
+outdir = "/elaborazioni/sharedCO/Abemus_data_analysis/Analysis_InSilicoDilution_STM2014/ABEMUS"
 
 # abemus main directory [ git clone ]
 abemusdir = "/elaborazioni/sharedCO/Home_casiraghi/Prog/abemus/"
 
 # Sample info file 
-filesif = "/elaborazioni/sharedCO/Abemus_data_analysis/Samples_info_files/IPM_PLASMA/SelectionGermlinesPbem/samples_for_pbem.tsv"
+filesif = "/elaborazioni/sharedCO/Abemus_data_analysis/Analysis_InSilicoDilution_STM2014/SIF_dilution.tsv"
 
 # bases in target regions [ previously obtained by using Rcript utility/PrepareTargetRegions.R ]
-targetbp = "/scratch/sharedCO/Casiraghi/Abemus_data/NimbleGen_SeqCapEZ_Exome_v3_Plasma_IPM/TargetPositions/"
+targetbp = "/scratch/sharedCO/Casiraghi/Abemus_data/AmpliSeq_AR_STM2015/TargetPositions/"
 
 # PacBam folder
-pacbamfolder = "/SPICE-NEW/Casiraghi/PaCBAM/Plasma_Project/DEDUP_mode4_strands/mbq20_mrq20_dedup_bychrom/"
+pacbamfolder = "/scratch/sharedCO/Casiraghi/InSilicoDilution/PaCBAM_byChrom/"
 
 # Controls folder
-controls_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/NimbleGen_SeqCapEZ_Exome_v3_Plasma_IPM/PLASMA_DEDUP/Controls/'
+controls_dir = '/elaborazioni/sharedCO/Abemus_data_analysis/Analysis_MultipleSamples_STM2014/ABEMUS/Controls'
 
 # Base Error Model folder
-pbem_dir = '/scratch/sharedCO/Casiraghi/Abemus_data/NimbleGen_SeqCapEZ_Exome_v3_Plasma_IPM/PLASMA_DEDUP/BaseErrorModel/'
+pbem_dir = '/elaborazioni/sharedCO/Abemus_data_analysis/Analysis_MultipleSamples_STM2014/ABEMUS/BaseErrorModel'
 
 # Number of threads
-mc.cores = 40
+mc.cores = 30
 
 # abemus working steps
 # 1. Compute pbem in target positions exploiting germline samples only;
@@ -39,21 +39,23 @@ aws = c(3)
 coverage_binning = 50
 
 # To compute pbem, consider only positions with AF <= af_max_to_compute_pbem  
-af_max_to_compute_pbem = 1.0
+af_max_to_compute_pbem = 0.2
 
 # To compute pbem, consider only positions with coverage >= coverage_min_to_compute_pbem 
 coverage_min_to_compute_pbem = 10
 
 # When compute pbem, count in how many germline samples the position has an AF >= n_pos_af_th
-n_pos_af_th = 0.15
+n_pos_af_th = 0.2
 
 # [ 2. Estimation of allelic fraction thresold exploiting germline samples only ]
 
 # To compute AF threshold, consider only positions with AF <= af_max_to_compute_thresholds  
-af_max_to_compute_thresholds = 0.1
+af_max_to_compute_thresholds = 0.2
 
 # To compute AF threshold, consider only positions with coverage >= coverage_min_to_compute_thresholds 
 coverage_min_to_compute_thresholds = 10
+
+# [ 2. Estimation of allelic fraction thresold exploiting germline samples only ]
 
 # [ 3. Call SNVs in case samples ]
 
@@ -67,7 +69,7 @@ coverage_min_to_compute_thresholds = 10
 AFbycov = TRUE
 
 # Desired specificity to set AF threshold
-spec = 0.9990
+spec = 0.9950
 
 # Minimum locus coverage in plasma/tumor sample
 mincov = 1
@@ -79,4 +81,8 @@ minalt = 1
 mincovgerm = 1
 
 # Maximum allelic fraction in germline samples
-maxafgerm = 0.2
+maxafgerm = 0.01
+
+# minaf corrected table
+minaf_corrected_table = "/elaborazioni/sharedCO/Abemus_data_analysis/Analysis_MultipleSamples_STM2014/ABEMUS/Controls/minaf_cov_corrected_10r_0.995_b.RData"
+
